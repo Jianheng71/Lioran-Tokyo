@@ -28,12 +28,16 @@ export const ProductFactsSchema = z.object({
 
 export type ProductFacts = z.infer<typeof ProductFactsSchema>;
 
+/** Models emit null for absent slots; official variables need plain strings. */
+const optionalSlot = (max: number) =>
+  z.string().max(max).nullish().transform((value) => value ?? "");
+
 export const VideoSpecSchema = z.object({
   locale: z.string().min(2).max(16),
   brand: z.string().min(1).max(40),
   title: z.string().min(1).max(48),
-  price: z.string().max(24),
-  compareAtPrice: z.string().max(24).default(""),
+  price: optionalSlot(24),
+  compareAtPrice: optionalSlot(24),
   headline: z.string().min(1).max(48),
   captions: z.tuple([
     z.string().min(1).max(42),
@@ -41,7 +45,7 @@ export const VideoSpecSchema = z.object({
     z.string().min(1).max(42),
   ]),
   cta: z.string().min(1).max(24),
-  tagline: z.string().max(48).default(""),
+  tagline: optionalSlot(48),
   urlHost: z.string().min(1).max(40),
   theme: z.object({
     background: hexColor,
