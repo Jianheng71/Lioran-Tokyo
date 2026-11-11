@@ -1,6 +1,6 @@
 # Lioran—Tokyo
 
-Local service: open an AI dialog, confirm the request, crawl a public product page, ask Hermes for **VideoSpec JSON only**, fill the official HyperFrames **`product-promo`** template through official variables, and render a **silent 9:16 (1080×1920 @ 30fps) MP4**. A later “change one line” reuses the last VideoSpec (no recrawl) and re-renders; the old MP4 is kept.
+Local service: open an AI dialog, confirm the request, crawl **any public page URL** you have the right to use (not only product PDPs), ask Hermes for **VideoSpec JSON only**, fill the official HyperFrames **`product-promo`** template through official variables, and render a **silent 9:16 (1080×1920 @ 30fps) MP4**. Incomplete pages soft-fill existing slots (no new slots; locked 15s timeline unchanged). A later “change one line” reuses the last VideoSpec (no recrawl) and re-renders; the old MP4 is kept.
 
 Pinned renderer: **`hyperframes@0.9.32`** (do not bump).
 

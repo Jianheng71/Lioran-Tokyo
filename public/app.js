@@ -24,7 +24,7 @@ const STRINGS = {
     openSidebar: "打开侧栏",
     collapseSidebar: "收起侧栏",
     expandSidebar: "展开侧栏",
-    emptySub: "说明你要的促销片，有商品页链接也可以一并贴上。先问清楚，确认后才开始做视频。",
+    emptySub: "说明你要的促销片，贴上任意公开页面链接即可。先问清楚，确认后才开始做视频。",
     confirmStart: "确认并开始",
     confirmFallback: "我已理解你的请求。确认后开始做视频，也可以先再补一句说明。",
     messageLabel: "消息",
@@ -73,7 +73,7 @@ const STRINGS = {
     collapseSidebar: "Collapse sidebar",
     expandSidebar: "Expand sidebar",
     emptySub:
-      "Describe the promo you need, including a product page if you have one. Questions come first; the video starts only after you confirm.",
+      "Describe the promo you need and paste any public page link you have the right to use. Questions come first; the video starts only after you confirm.",
     confirmStart: "Confirm and start",
     confirmFallback:
       "I think I understand the request. Confirm to start the video, or send another note first.",

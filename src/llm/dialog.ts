@@ -51,7 +51,7 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
   if (url) {
     const templateId = resolveTemplate(session, message, named);
     return {
-      reply: "I read this as a new promo from that product page. On-screen copy will follow the page language. Reply confirm when this matches what you want, or tell me what to change first.",
+      reply: "I read this as a new promo from that public page. On-screen copy will follow the page language. Missing fields will be filled reasonably. Reply confirm when this matches what you want, or tell me what to change first.",
       status: "ready_to_confirm",
       understood: { mode: "new_from_url", url, instruction: null, templateId },
       questions: [],
@@ -80,13 +80,13 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
 
   return {
     reply: session.lastVideoSpec
-      ? "Tell me what to change in the last video, or paste a new product page link."
-      : "Paste a public product page link, and say anything you need about price, tone, or language. I will confirm before starting.",
+      ? "Tell me what to change in the last video, or paste a new public page link."
+      : "Paste any public page link you have the right to use, and say anything you need about tone or language. I will confirm before starting.",
     status: "need_clarification",
     understood: { mode: "unclear", url: null, instruction: null, templateId: named },
     questions: session.lastVideoSpec
       ? ["What should change in the last promo?"]
-      : ["Which public product page should I use?"],
+      : ["Which public page should I use?"],
   };
 }
 

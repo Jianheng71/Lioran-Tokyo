@@ -39,15 +39,16 @@ export function videoSpecFromFacts(
   const brand = clip(facts.brand || facts.urlHost, 40);
   const desc = clip(facts.description || title, 42);
 
+  const priceText = clip(formatPrice(facts), 24);
   const captions: [string, string, string] = zh
     ? [
         clip(`${brand} · ${title}`, 22),
-        clip(desc || "锁定卖点，跟住节奏。", 22),
-        clip("十五秒，把商品说清楚。", 22),
+        clip(desc || (priceText ? `参考价 ${priceText}` : "锁定要点，跟住节奏。"), 22),
+        clip(priceText ? "十五秒，把这一页说清楚。" : "十五秒，把这一页说清楚。", 22),
       ]
     : [
         clip(`${brand}: ${title}`, 42),
-        clip(desc || "Key points, kept on beat.", 42),
+        clip(desc || (priceText ? `From ${priceText}` : "Key points, kept on beat."), 42),
         clip("Fifteen seconds. Clear and done.", 42),
       ];
 
@@ -55,12 +56,12 @@ export function videoSpecFromFacts(
     locale: facts.localeHint.slice(0, 8),
     brand,
     title,
-    price: clip(formatPrice(facts), 24),
+    price: priceText,
     compareAtPrice: clip(formatCompare(facts), 24),
-    headline: clip(zh ? "一起看清这一款" : "See this one clearly", 48),
+    headline: clip(zh ? "一起看清这一页" : "See this page clearly", 48),
     captions,
     cta: zh ? "立即了解" : "Learn more",
-    tagline: clip(zh ? "本地短片，跟着商品页语言。" : "Local short film, page language first.", 48),
+    tagline: clip(zh ? "本地短片，跟着页面语言。" : "Local short film, page language first.", 48),
     urlHost: clip(facts.urlHost, 40),
     theme: {
       background: "#0a0a0f",

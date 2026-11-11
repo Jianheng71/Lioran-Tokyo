@@ -31,6 +31,7 @@ const SPEC: VideoSpec = {
   tagline: "",
   urlHost: "example.com",
   theme: { background: "#0a0a0f", accent: "#C41E3A" },
+  templateId: "product-promo",
 };
 
 const createdSessions: string[] = [];
@@ -153,7 +154,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
         chat: {
           phase: "idle",
           messages: [],
-          draft: { mode: null, url: null, instruction: null, summary: null },
+          draft: { mode: null, url: null, instruction: null, summary: null, templateId: null },
           activeJobId: null,
         },
       }),
@@ -233,6 +234,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
             mode: "new_from_url",
             url: "https://example.com/product",
             instruction: null,
+            templateId: "product-promo",
           },
           questions: [],
         }),
@@ -253,6 +255,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: null,
       instruction: "make the headline shorter",
       summary: "revise",
+      templateId: "product-promo",
     };
     running.lastVideoSpec = SPEC;
     saveSession(running);
@@ -268,6 +271,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
             mode: "revise",
             url: null,
             instruction: "make the headline shorter",
+            templateId: "product-promo",
           },
           questions: [],
         }),
@@ -286,6 +290,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: null,
       instruction: "change the price to 10",
       summary: "revise",
+      templateId: "product-promo",
     };
     chatWait.lastVideoSpec = SPEC;
     saveSession(chatWait);
@@ -301,6 +306,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
             mode: "revise",
             url: null,
             instruction: "change the price to 10",
+            templateId: "product-promo",
           },
           questions: [],
         }),
@@ -318,6 +324,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: null,
       instruction: "change the price",
       summary: "revise",
+      templateId: "product-promo",
     };
     done.lastVideoSpec = SPEC;
     saveSession(done);
@@ -332,6 +339,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: null,
       instruction: "change the price to 10",
       summary: "revise",
+      templateId: "product-promo",
     };
     waiting.lastVideoSpec = SPEC;
     saveSession(waiting);
@@ -376,6 +384,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: "file:///etc/passwd",
       instruction: null,
       summary: "file",
+      templateId: "product-promo",
     };
     saveSession(session);
     assert.throws(() => handleChatConfirm(session.sessionId), (err) =>
@@ -441,6 +450,7 @@ describe("path safety and confirm gating", { concurrency: false }, () => {
       url: "https://example.com/p",
       instruction: null,
       summary: "go",
+      templateId: "product-promo",
     };
     saveSession(missing);
     const confirmRes = await app.request(`/v1/chat/${missing.sessionId}/confirm`, { method: "POST" });

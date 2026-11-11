@@ -57,6 +57,14 @@ async function downloadImage(url: string, destDir: string, index: number): Promi
   }
 }
 
+/** Copy a redistributable fixture image so fills never fail for image-less pages. */
+function stagePlaceholderImage(destDir: string): string {
+  const src = path.join(config.root, "fixtures", "assets", "product.png");
+  const dest = path.join(destDir, "img_placeholder_product.png");
+  fs.copyFileSync(src, dest);
+  return dest;
+}
+
 type Extracted = {
   title: string | null;
   brand: string | null;
@@ -74,7 +82,8 @@ type Extracted = {
 
 /**
  * Generic public-page crawl via Crawlee (PuppeteerCrawler).
- * Extracts OG / JSON-LD / visible main fields only.
+ * Works for any public URL the user has the right to use — not only product PDPs.
+ * Extracts OG / JSON-LD / visible primary fields and soft-fills missing slots.
  * No site-specific adapters. No login-wall crawling. No Python.
  */
 export async function crawlProductPage(url: string, assetDir: string): Promise<ProductFacts> {
@@ -102,7 +111,7 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
         page.setDefaultTimeout(config.crawlTimeoutMs);
         const status = response?.status() ?? null;
         if (status != null && status >= 400) {
-          throw new Error(`Product page HTTP ${status}`);
+          throw new Error(`Public page HTTP ${status}`);
         }
 
         const data = await page.evaluate(() => {
@@ -120,6 +129,7 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
             (document.querySelector(sel) as HTMLElement | null)?.innerText?.trim() || null;
 
           const ogTitle = meta('meta[property="og:title"]') || meta('meta[name="twitter:title"]');
+          const ogSite = meta('meta[property="og:site_name"]');
           const ogDesc =
             meta('meta[property="og:description"]') ||
             meta('meta[name="description"]') ||
@@ -143,24 +153,45 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
           }
 
           const products: Array<Record<string, unknown>> = [];
+          const pages: Array<Record<string, unknown>> = [];
           const visit = (node: unknown) => {
             if (!node || typeof node !== "object") return;
             const obj = node as Record<string, unknown>;
             const type = obj["@type"];
             const types = Array.isArray(type) ? type : type ? [type] : [];
-            if (types.some((t) => String(t).toLowerCase() === "product")) products.push(obj);
+            const lower = types.map((t) => String(t).toLowerCase());
+            if (lower.some((t) => t === "product")) products.push(obj);
+            if (
+              lower.some((t) =>
+                ["webpage", "article", "newsarticle", "blogposting", "organization", "website"].includes(
+                  t,
+                ),
+              )
+            ) {
+              pages.push(obj);
+            }
             if (Array.isArray(obj["@graph"])) obj["@graph"].forEach(visit);
           };
           jsonLdBlocks.forEach(visit);
 
           const product = products[0] || null;
-          let brand: string | null = null;
+          const pageNode = pages[0] || null;
+          let brand: string | null = ogSite || null;
           let price: string | null = null;
           let currency: string | null = null;
           const compareAtPrice: string | null = null;
           let ldTitle: string | null = null;
           let ldDesc: string | null = null;
           const ldImages: string[] = [];
+
+          const takeImages = (img: unknown) => {
+            if (typeof img === "string") ldImages.push(img);
+            else if (Array.isArray(img)) {
+              for (const i of img) if (typeof i === "string") ldImages.push(i);
+            } else if (img && typeof img === "object" && typeof (img as { url?: string }).url === "string") {
+              ldImages.push((img as { url: string }).url);
+            }
+          };
 
           if (product) {
             ldTitle = typeof product.name === "string" ? product.name : null;
@@ -177,11 +208,16 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
               if (o.price != null) price = String(o.price);
               if (typeof o.priceCurrency === "string") currency = o.priceCurrency;
             }
-            const img = product.image;
-            if (typeof img === "string") ldImages.push(img);
-            else if (Array.isArray(img)) {
-              for (const i of img) if (typeof i === "string") ldImages.push(i);
-            }
+            takeImages(product.image);
+          }
+
+          if (pageNode) {
+            if (!ldTitle && typeof pageNode.name === "string") ldTitle = pageNode.name;
+            if (!ldTitle && typeof pageNode.headline === "string") ldTitle = pageNode.headline;
+            if (!ldDesc && typeof pageNode.description === "string") ldDesc = pageNode.description;
+            if (!brand && typeof pageNode.name === "string" && !product) brand = pageNode.name;
+            takeImages(pageNode.image);
+            takeImages(pageNode.logo);
           }
 
           const visibleTitle =
@@ -203,7 +239,7 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
           }
 
           const logoEl = document.querySelector(
-            'img[alt*="logo" i], link[rel="icon"]',
+            'img[alt*="logo" i], link[rel="apple-touch-icon"], link[rel="icon"]',
           ) as HTMLImageElement | HTMLLinkElement | null;
           const logo =
             abs(
@@ -232,12 +268,13 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
 
         holder.result = { ...data, httpStatus: status };
 
-        // Refuse obvious login walls with no product signals
+        // Refuse obvious login walls with no page signals
         const loginish =
           /sign in|log in|login|登录|登錄|サインイン/i.test(data.title || "") &&
-          data.images.length === 0;
+          data.images.length === 0 &&
+          !(data.description || "").trim();
         if (loginish) {
-          throw new Error("Refusing to crawl a login wall. Use a public product page.");
+          throw new Error("Refusing to crawl a login wall. Use a public page you have the right to use.");
         }
 
         // Single-URL crawl; request kept for Crawlee handler signature
@@ -251,23 +288,22 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
     await crawler.run([url]);
 
     if (holder.crawlError) throw holder.crawlError;
-    if (!holder.result) throw new Error("Crawlee finished without extracting product fields.");
+    if (!holder.result) throw new Error("Crawlee finished without extracting page fields.");
     return holder.result;
   });
 
-  if (!extracted.title || extracted.images.length === 0) {
-    throw new Error(
-      "Could not extract enough product fields (need title and at least one image from OG / JSON-LD / visible content).",
-    );
-  }
+  const host = hostOf(url);
+  const title =
+    (extracted.title || "").trim() ||
+    (extracted.description || "").trim().slice(0, 48) ||
+    host;
+  const brand = (extracted.brand || "").trim() || host;
+  const description = (extracted.description || extracted.textSample || title).slice(0, 800);
 
   const localImages: string[] = [];
   for (let i = 0; i < extracted.images.length && localImages.length < 4; i++) {
     const local = await downloadImage(extracted.images[i], assetDir, i);
     if (local) localImages.push(local);
-  }
-  if (localImages.length === 0) {
-    throw new Error("Failed to download product images.");
   }
 
   let localLogo: string | null = null;
@@ -275,20 +311,29 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
     localLogo = await downloadImage(extracted.logo, assetDir, 90);
   }
 
+  // Soft-fill: incomplete pages still get a usable brandMark image for product-promo.
+  if (localImages.length === 0) {
+    if (localLogo) {
+      localImages.push(localLogo);
+    } else {
+      localImages.push(stagePlaceholderImage(assetDir));
+    }
+  }
+
   return ProductFactsSchema.parse({
     sourceUrl: url,
-    title: extracted.title,
-    brand: extracted.brand || hostOf(url),
+    title,
+    brand,
     price: extracted.price,
     currency: extracted.currency,
     compareAtPrice: extracted.compareAtPrice,
-    description: (extracted.description || "").slice(0, 800),
+    description,
     images: localImages,
-    urlHost: hostOf(url),
+    urlHost: host,
     localeHint: inferLocale({
       htmlLang: extracted.htmlLang,
       ogLocale: extracted.ogLocale,
-      textSample: `${extracted.title} ${extracted.description} ${extracted.textSample}`,
+      textSample: `${title} ${description} ${extracted.textSample}`,
     }),
     logo: localLogo,
   });
