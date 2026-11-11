@@ -12,7 +12,7 @@ import { getSession } from "./session/store.js";
 
 ensureDataDirs();
 
-const app = new Hono();
+export const app = new Hono();
 
 app.get("/health", async (c) => c.json(await buildHealth()));
 
@@ -47,50 +47,65 @@ app.post("/v1/jobs", async (c) => {
 });
 
 app.get("/v1/jobs/:jobId", (c) => {
-  const job = getJob(c.req.param("jobId"));
-  if (!job) return c.json({ error: "Job not found" }, 404);
-  return c.json({
-    jobId: job.jobId,
-    sessionId: job.sessionId,
-    status: job.status,
-    error: job.error,
-    videoUrl: job.videoUrl,
-    videoSpec: job.videoSpec,
-    stageDetail: job.stageDetail ?? null,
-  });
+  try {
+    const job = getJob(c.req.param("jobId"));
+    if (!job) return c.json({ error: "Job not found" }, 404);
+    return c.json({
+      jobId: job.jobId,
+      sessionId: job.sessionId,
+      status: job.status,
+      error: job.error,
+      videoUrl: job.videoUrl,
+      videoSpec: job.videoSpec,
+      stageDetail: job.stageDetail ?? null,
+    });
+  } catch (err) {
+    const status = (err as { status?: number }).status || 500;
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, status as 400);
+  }
 });
 
 app.get("/v1/sessions/:sessionId", (c) => {
-  const session = getSession(c.req.param("sessionId"));
-  if (!session) return c.json({ error: "Session not found" }, 404);
-  return c.json({
-    sessionId: session.sessionId,
-    lastVideoSpec: session.lastVideoSpec,
-    lastFacts: session.lastFacts,
-    lastJobId: session.lastJobId,
-    lastVideoUrl: session.lastVideoUrl,
-    chat: {
-      phase: session.chat.phase,
-      draft: session.chat.draft,
-      activeJobId: session.chat.activeJobId,
-      messages: session.chat.messages,
-    },
-  });
+  try {
+    const session = getSession(c.req.param("sessionId"));
+    if (!session) return c.json({ error: "Session not found" }, 404);
+    return c.json({
+      sessionId: session.sessionId,
+      lastVideoSpec: session.lastVideoSpec,
+      lastFacts: session.lastFacts,
+      lastJobId: session.lastJobId,
+      lastVideoUrl: session.lastVideoUrl,
+      chat: {
+        phase: session.chat.phase,
+        draft: session.chat.draft,
+        activeJobId: session.chat.activeJobId,
+        messages: session.chat.messages,
+      },
+    });
+  } catch (err) {
+    const status = (err as { status?: number }).status || 500;
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, status as 400);
+  }
 });
 
 app.get("/v1/videos/:file", (c) => {
-  const file = c.req.param("file");
-  const m = file.match(/^(job_[a-f0-9]+)\.mp4$/i);
-  if (!m) return c.json({ error: "Not found" }, 404);
-  const jobId = m[1];
-  const mp4 = path.join(jobDir(jobId), "video.mp4");
-  if (!fs.existsSync(mp4)) return c.json({ error: "Video not ready" }, 404);
-  const buf = fs.readFileSync(mp4);
-  return c.body(buf, 200, {
-    "content-type": "video/mp4",
-    "content-length": String(buf.length),
-    "cache-control": "no-store",
-  });
+  try {
+    const file = c.req.param("file");
+    const m = file.match(/^(job_[a-f0-9]{12})\.mp4$/);
+    if (!m || !m[1]) return c.json({ error: "Not found" }, 404);
+    const jobId = m[1];
+    const mp4 = path.join(jobDir(jobId), "video.mp4");
+    if (!fs.existsSync(mp4)) return c.json({ error: "Video not ready" }, 404);
+    const buf = fs.readFileSync(mp4);
+    return c.body(buf, 200, {
+      "content-type": "video/mp4",
+      "content-length": String(buf.length),
+      "cache-control": "no-store",
+    });
+  } catch (err) {
+    const status = (err as { status?: number }).status || 500;
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, status as 400);
+  }
 });
 
 app.post("/v1/chat", async (c) => {
@@ -140,6 +155,9 @@ app.get("/*", (c) => {
   return c.body(buf, 200, { "content-type": hit.mime });
 });
 
-const port = config.port;
-console.log(`Lioran—Tokyo listening on http://127.0.0.1:${port}`);
-serve({ fetch: app.fetch, port, hostname: "127.0.0.1" });
+// Tests import this module with LIORAN_DISABLE_LISTEN=1 and must not bind a port.
+if (process.env.LIORAN_DISABLE_LISTEN !== "1") {
+  const port = config.port;
+  console.log(`Lioran—Tokyo listening on http://127.0.0.1:${port}`);
+  serve({ fetch: app.fetch, port, hostname: "127.0.0.1" });
+}

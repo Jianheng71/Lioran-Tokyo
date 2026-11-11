@@ -1,14 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config, ensureDataDirs } from "../config.js";
+import { assertJobId } from "../ids.js";
 import type { JobRecord, JobStatus, VideoSpec } from "../schemas.js";
 
-function jobMetaPath(jobId: string): string {
-  return path.join(config.paths.jobs, jobId, "job.json");
+export function jobDir(jobId: string): string {
+  return path.join(config.paths.jobs, assertJobId(jobId));
 }
 
-export function jobDir(jobId: string): string {
-  return path.join(config.paths.jobs, jobId);
+function jobMetaPath(jobId: string): string {
+  return path.join(jobDir(jobId), "job.json");
 }
 
 export function saveJob(job: JobRecord): void {

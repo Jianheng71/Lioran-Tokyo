@@ -117,6 +117,7 @@ const state = {
   awaitingConfirm: false,
   activeJobId: null,
   pollTimer: null,
+  pollGeneration: 0,
   history: loadHistory(),
   lang: loadLang(),
   lastConfirmSummary: null,
@@ -636,6 +637,7 @@ async function confirmJob() {
 }
 
 function stopPoll() {
+  state.pollGeneration += 1;
   if (state.pollTimer) {
     clearInterval(state.pollTimer);
     state.pollTimer = null;
@@ -643,6 +645,8 @@ function stopPoll() {
 }
 
 function watchJob(jobId) {
+  stopPoll();
+  const generation = state.pollGeneration;
   state.activeJobId = jobId;
   appendBubble("assistant", t("queued"), {
     progress: true,
@@ -652,11 +656,14 @@ function watchJob(jobId) {
     progress: true,
     meta: jobId,
   });
-  stopPoll();
-  state.pollTimer = setInterval(async () => {
+
+  async function poll() {
+    if (generation !== state.pollGeneration) return;
     try {
       const res = await fetch(`/v1/jobs/${encodeURIComponent(jobId)}`);
+      if (generation !== state.pollGeneration) return;
       const job = await res.json();
+      if (generation !== state.pollGeneration) return;
       if (!res.ok) {
         status.bubble.textContent = job.error || t("jobMissing");
         status.bubble.classList.add("error");
@@ -681,9 +688,14 @@ function watchJob(jobId) {
         appendBubble("assistant", job.error || t("jobFailed"), { error: true });
       }
     } catch (err) {
+      if (generation !== state.pollGeneration) return;
       status.bubble.textContent = err instanceof Error ? err.message : String(err);
       status.bubble.classList.add("error");
     }
+  }
+
+  state.pollTimer = setInterval(() => {
+    void poll();
   }, 1500);
 }
 
