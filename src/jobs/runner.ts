@@ -58,7 +58,7 @@ export async function runJob(job: JobRecord): Promise<void> {
       videoSpec = generated.spec;
       if (preferredTemplateId) videoSpec.templateId = preferredTemplateId;
       setJobStatus(job.jobId, "generating", {
-        stageDetail: `spec source=${generated.source}; template=${videoSpec.templateId}`,
+        stageDetail: `spec source=${generated.source}; reason=${generated.reason ?? "-"}; template=${videoSpec.templateId}`,
         videoSpec,
       });
     } else {
@@ -71,7 +71,7 @@ export async function runJob(job: JobRecord): Promise<void> {
       videoSpec = generated.spec;
       if (preferredTemplateId) videoSpec.templateId = preferredTemplateId;
       setJobStatus(job.jobId, "generating", {
-        stageDetail: `spec source=${generated.source}; template=${videoSpec.templateId}`,
+        stageDetail: `spec source=${generated.source}; reason=${generated.reason ?? "-"}; template=${videoSpec.templateId}`,
         videoSpec,
       });
     }

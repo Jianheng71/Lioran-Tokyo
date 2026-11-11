@@ -1,19 +1,32 @@
 import type { ProductFacts, TemplateId, VideoSpec } from "../schemas.js";
 import { VideoSpecSchema } from "../schemas.js";
 import { HermesUnavailableError, extractJsonObject, hermesChatJson } from "./hermes.js";
-import { mergeSpecDefaults, videoSpecFromFacts } from "./fallback.js";
+import {
+  mergeSpecDefaults,
+  normalizeSpecCandidate,
+  videoSpecFromFacts,
+} from "./fallback.js";
 import { VIDEO_SPEC_SYSTEM, factsToSpecUserPrompt, reviseSpecUserPrompt } from "./prompts.js";
 import { DEFAULT_TEMPLATE_ID, inferTemplateId, chooseTemplateId } from "../templates/catalog.js";
 
-function parseSpec(raw: string, prev?: VideoSpec): VideoSpec {
-  const parsed = extractJsonObject(raw);
+export type SpecResult = {
+  spec: VideoSpec;
+  source: "hermes" | "fallback";
+  /** Why the deterministic fallback was used, for stageDetail and logs. */
+  reason?: string;
+};
+
+export function parseSpec(raw: string, prev?: VideoSpec): VideoSpec {
+  const parsed = normalizeSpecCandidate(extractJsonObject(raw));
   const result = VideoSpecSchema.safeParse(parsed);
   if (result.success) return result.data;
   if (prev && parsed && typeof parsed === "object") {
     const merged = mergeSpecDefaults(parsed as Partial<VideoSpec>, prev);
     return VideoSpecSchema.parse(merged);
   }
-  throw new Error(result.error.issues.map((i) => i.message).join("; "));
+  throw new Error(
+    result.error.issues.map((i) => `${i.path.join(".") || "spec"}: ${i.message}`).join("; "),
+  );
 }
 
 async function generateWithRetry(user: string, prev?: VideoSpec): Promise<VideoSpec> {
@@ -41,10 +54,7 @@ async function generateWithRetry(user: string, prev?: VideoSpec): Promise<VideoS
 export async function generateVideoSpecFromFacts(
   facts: ProductFacts,
   preferredTemplateId?: TemplateId | null,
-): Promise<{
-  spec: VideoSpec;
-  source: "hermes" | "fallback";
-}> {
+): Promise<SpecResult> {
   const templateId =
     preferredTemplateId ||
     chooseTemplateId({ named: null, message: `${facts.title} ${facts.description}` }) ||
@@ -54,10 +64,9 @@ export async function generateVideoSpecFromFacts(
     if (!spec.templateId) spec.templateId = templateId;
     return { spec, source: "hermes" };
   } catch (err) {
-    if (err instanceof HermesUnavailableError) {
-      return { spec: videoSpecFromFacts(facts, templateId), source: "fallback" };
-    }
-    return { spec: videoSpecFromFacts(facts, templateId), source: "fallback" };
+    const reason = err instanceof Error ? err.message : String(err);
+    console.warn(`VideoSpec generation failed (${reason}); using deterministic fallback.`);
+    return { spec: videoSpecFromFacts(facts, templateId), source: "fallback", reason };
   }
 }
 
@@ -65,31 +74,23 @@ export async function reviseVideoSpec(
   prev: VideoSpec,
   instruction: string,
   facts: ProductFacts | null,
-): Promise<{ spec: VideoSpec; source: "hermes" | "fallback" }> {
+): Promise<SpecResult> {
   try {
     const spec = await generateWithRetry(reviseSpecUserPrompt(prev, instruction), prev);
     return { spec, source: "hermes" };
   } catch (err) {
-    if (err instanceof HermesUnavailableError) {
-      const local = localRevise(prev, instruction);
-      if (local) return { spec: local, source: "fallback" };
-      if (facts) {
-        return {
-          spec: videoSpecFromFacts(facts, prev.templateId || DEFAULT_TEMPLATE_ID),
-          source: "fallback",
-        };
-      }
-      throw err;
-    }
+    const reason = err instanceof Error ? err.message : String(err);
+    console.warn(`VideoSpec revision failed (${reason}); using deterministic fallback.`);
     const local = localRevise(prev, instruction);
-    if (local) return { spec: local, source: "fallback" };
+    if (local) return { spec: local, source: "fallback", reason };
     if (facts) {
       return {
         spec: videoSpecFromFacts(facts, prev.templateId || DEFAULT_TEMPLATE_ID),
         source: "fallback",
+        reason,
       };
     }
-    return { spec: prev, source: "fallback" };
+    return { spec: prev, source: "fallback", reason };
   }
 }
 
