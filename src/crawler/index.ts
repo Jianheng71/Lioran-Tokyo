@@ -5,6 +5,7 @@ import { PuppeteerCrawler } from "crawlee";
 import { config } from "../config.js";
 import { withBrowserLock } from "../locks.js";
 import { ProductFactsSchema, type ProductFacts } from "../schemas.js";
+import { assertHttpUrl } from "../urls.js";
 
 function hostOf(url: string): string {
   try {
@@ -77,6 +78,7 @@ type Extracted = {
  * No site-specific adapters. No login-wall crawling. No Python.
  */
 export async function crawlProductPage(url: string, assetDir: string): Promise<ProductFacts> {
+  url = assertHttpUrl(url);
   fs.mkdirSync(assetDir, { recursive: true });
 
   const extracted = await withBrowserLock(async (): Promise<Extracted> => {

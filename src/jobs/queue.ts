@@ -1,6 +1,7 @@
 import { newJobId } from "../ids.js";
 import { getOrCreateSession, saveSession } from "../session/store.js";
 import type { JobRecord } from "../schemas.js";
+import { assertHttpUrl } from "../urls.js";
 import { saveJob } from "./store.js";
 import { runJob } from "./runner.js";
 
@@ -27,6 +28,7 @@ async function pump(): Promise<void> {
 }
 
 export function enqueueUrlJob(opts: { url: string; sessionId?: string }): JobRecord {
+  const url = assertHttpUrl(opts.url);
   const session = getOrCreateSession(opts.sessionId);
   const now = new Date().toISOString();
   const job: JobRecord = {
@@ -39,7 +41,7 @@ export function enqueueUrlJob(opts: { url: string; sessionId?: string }): JobRec
     createdAt: now,
     updatedAt: now,
     kind: "url",
-    url: opts.url,
+    url,
   };
   saveJob(job);
   session.chat.phase = "running";
