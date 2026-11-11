@@ -32,17 +32,22 @@ function chromeInstallHint(): string {
 function hermesHint(detail: string): string {
   const base = config.hermesBaseUrl;
   const bits = [
-    `Expected OpenAI-compatible Hermes at ${base} (default http://127.0.0.1:43127 from Jianheng71/Lioran).`,
-    "Doctor probes GET /v1/models.",
+    `Point HERMES_BASE_URL at an already-deployed OpenAI-compatible base URL where GET /v1/models works (current value: ${base}).`,
+    "Doctor probes GET {HERMES_BASE_URL}/v1/models.",
+    "The repo default http://127.0.0.1:43127 is only a starting guess — on some machines that port is a different app (for example a Next.js HTML page) and /v1/models returns 404.",
   ];
-  if (/HTTP 404/i.test(detail)) {
+  if (/HTML|HTTP 404/i.test(detail)) {
     bits.push(
-      "HTTP 404 usually means something else is bound on that port, or Hermes is not serving /v1/models — start the Lioran Hermes stack, or set HERMES_BASE_URL to the correct base.",
+      "Got HTML or HTTP 404: set HERMES_BASE_URL in .env to the working local OpenAI-compatible address (one common example is http://127.0.0.1:11434 when Ollama is serving hermes3:8b there). Do not assume 43127 or 11434 for every environment — verify GET /v1/models on your machine.",
     );
-  } else if (/fetch failed|ECONNREFUSED|unreachable|timed out/i.test(detail)) {
-    bits.push("Nothing answered on that address — start Hermes first, then re-run doctor / confirm a job.");
+  } else if (/fetch failed|ECONNREFUSED|unreachable|timed out|abort/i.test(detail)) {
+    bits.push(
+      "Nothing answered on that address — start your local Hermes/Ollama (or other OpenAI-compatible) service, set HERMES_BASE_URL to its base URL, then re-run doctor.",
+    );
   }
-  bits.push("Fixture render (npm run render:fixture) does not need Hermes. Confirmed chat jobs that need the model do.");
+  bits.push(
+    "Fixture render (npm run render:fixture) does not need Hermes. Confirmed chat jobs that need the model do.",
+  );
   return bits.join(" ");
 }
 

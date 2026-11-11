@@ -31,9 +31,9 @@ export async function buildHealth() {
         fixtureRenderRequiresHermes: false,
         hint: hermes.ok
           ? undefined
-          : /HTTP 404/i.test(hermes.detail)
-            ? "HTTP 404 at HERMES_BASE_URL usually means the wrong service is on that port, or /v1/models is missing — start Lioran Hermes or fix HERMES_BASE_URL"
-            : "Start Hermes at HERMES_BASE_URL (default http://127.0.0.1:43127) before confirming chat jobs that need the model",
+          : /HTML|HTTP 404/i.test(hermes.detail)
+            ? "HERMES_BASE_URL returned HTML or HTTP 404 for GET /v1/models — set .env HERMES_BASE_URL to a working OpenAI-compatible base (example when Ollama serves hermes3:8b: http://127.0.0.1:11434). Verify on your machine; do not assume 43127."
+            : "Set HERMES_BASE_URL to an OpenAI-compatible base where GET /v1/models works, then confirm chat jobs that need the model",
       },
       hyperframes: {
         ...hyperframes,
