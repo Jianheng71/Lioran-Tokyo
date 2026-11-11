@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"zh"},{"id":"brand","type":"string","label":"Brand name","default":"Brand"},{"id":"title","type":"string","label":"Title","default":"Product"},{"id":"price","type":"string","label":"Price","default":""},{"id":"compareAtPrice","type":"string","label":"Compare-at price","default":""},{"id":"headline","type":"string","label":"Headline","default":"Headline"},{"id":"caption1","type":"string","label":"Caption 1","default":""},{"id":"caption2","type":"string","label":"Caption 2","default":""},{"id":"caption3","type":"string","label":"Caption 3","default":""},{"id":"cta","type":"string","label":"Call to action","default":""},{"id":"tagline","type":"string","label":"Tagline","default":""},{"id":"urlHost","type":"string","label":"URL","default":"example.com"},{"id":"background","type":"color","label":"Background","default":"#0a0a0f"},{"id":"accent","type":"color","label":"Accent","default":"#C41E3A"},{"id":"brandMark","type":"image","label":"Logo or main product image","default":"assets/logo.png"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Lioran—Tokyo</title>
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-700.woff2") format("woff2");
+}
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--background, #0a0a0f);
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+      }
+      .scene {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .caption-text-wrapper {
+        position: absolute;
+        bottom: 150px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+        overflow: hidden;
+        padding: 10px 0;
+      }
+      .caption-line {
+        color: white;
+        font-size: 48px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        text-align: center;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        transform: translateY(100%);
+        opacity: 0;
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="15"
+      data-fps="30"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Locked timings: 0–1.125 / 1.125–10.5 / 10.5–15. Do not change. -->
+      <div
+        id="scene-1"
+        class="scene"
+        data-composition-id="scene1-intro"
+        data-composition-src="compositions/scene1-intro.html"
+        data-start="0"
+        data-duration="1.125"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-2-4"
+        class="scene"
+        data-composition-id="scene2-4-canvas"
+        data-composition-src="compositions/scene2-4-canvas.html"
+        data-start="1.125"
+        data-duration="9.375"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-5"
+        class="scene"
+        data-composition-id="scene5-outro"
+        data-composition-src="compositions/scene5-outro.html"
+        data-start="10.5"
+        data-duration="4.5"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="captions-comp"
+        data-track-kind="captions"
+        data-composition-id="captions"
+        data-start="1.125"
+        data-duration="9.375"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      >
+        <div class="caption-text-wrapper">
+          <div id="caption-text" class="caption-line" data-var-text="caption1"></div>
+        </div>
+
+        <script>
+          (function () {
+            const vars = window.__hyperframes.getVariables();
+            if (vars.locale) document.documentElement.lang = String(vars.locale);
+            if (vars.brand) document.title = String(vars.brand);
+
+            const tl = gsap.timeline({ paused: true });
+            const text = document.querySelector("#caption-text");
+            const line2 = vars.caption2 != null ? String(vars.caption2) : "";
+            const line3 = vars.caption3 != null ? String(vars.caption3) : "";
+
+            tl.to(text, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0);
+            tl.to(text, { opacity: 0, y: -20, duration: 0.3, ease: "power3.in" }, 3.2);
+            tl.set(text, { innerText: line2, y: 40 }, 3.5);
+            tl.to(text, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.5);
+            tl.to(text, { opacity: 0, y: -20, duration: 0.3, ease: "power3.in" }, 7.7);
+            tl.set(text, { innerText: line3, y: 40 }, 8.0);
+            tl.to(text, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 8.0);
+            tl.to(text, { opacity: 0, y: -20, duration: 0.4, ease: "power3.in" }, 12.1);
+
+            // Motion lock: official 20s timeline scaled to the locked 15s duration.
+            tl.duration(tl.duration() * 15 / 20);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["captions"] = tl;
+          })();
+        </script>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const mainTl = gsap.timeline({ paused: true });
+
+      mainTl.set("#scene-2-4", { scale: 1, filter: "blur(0px)" }, 1.5);
+      mainTl.to(
+        "#scene-2-4",
+        { duration: 0.25, scale: 0.94, filter: "blur(6px)", opacity: 0, ease: "power2.in" },
+        13.75,
+      );
+
+      mainTl.duration(mainTl.duration() * 15 / 20);
+      window.__timelines["main"] = mainTl;
+    </script>
+  </body>
+</html>

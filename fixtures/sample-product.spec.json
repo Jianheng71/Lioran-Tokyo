@@ -1,0 +1,24 @@
+{
+  "locale": "zh",
+  "brand": "Lioran—Tokyo",
+  "title": "里织排版工作台",
+  "price": "¥199",
+  "compareAtPrice": "¥399",
+  "headline": "一起排版，字字到位",
+  "captions": [
+    "锁定模板，一份固件。",
+    "文案入槽，每一场都跟上。",
+    "十五秒，可以出片。"
+  ],
+  "cta": "立即体验",
+  "tagline": "在东京剪辑，一起完成。",
+  "urlHost": "lioran.tokyo",
+  "theme": {
+    "background": "#0a0a0f",
+    "accent": "#C41E3A"
+  },
+  "assets": {
+    "logo": "assets/logo.png",
+    "productImage": "assets/product.png"
+  }
+}

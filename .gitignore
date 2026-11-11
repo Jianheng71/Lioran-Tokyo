@@ -1,0 +1,12 @@
+node_modules/
+data/**
+!data/.gitkeep
+storage/
+.render.lock
+.browser.lock
+templates/product-promo/.hyperframes/
+*.log
+.env
+uploads/
+dist/
+.DS_Store

@@ -1,0 +1,14 @@
+{
+  "sourceUrl": "https://lioran.tokyo/sample",
+  "title": "里织排版工作台",
+  "brand": "Lioran—Tokyo",
+  "price": "199",
+  "currency": "CNY",
+  "compareAtPrice": "399",
+  "description": "P1 固件样例。不经爬虫、不经 Hermes。一张可再分发的占位图。",
+  "images": [
+    "assets/product.png"
+  ],
+  "urlHost": "lioran.tokyo",
+  "localeHint": "zh"
+}

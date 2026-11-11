@@ -1,0 +1,30 @@
+{
+  "name": "lioran-tokyo",
+  "private": true,
+  "type": "module",
+  "description": "Lioran—Tokyo: local AI dialog → crawl → Hermes VideoSpec JSON → official HyperFrames variables → silent 15s 9:16 MP4.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "render:fixture": "node scripts/render-fixture.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "crawlee": "^3.13.0",
+    "dotenv": "^16.5.0",
+    "hono": "^4.7.8",
+    "hyperframes": "0.9.32",
+    "puppeteer": "^24.8.2",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

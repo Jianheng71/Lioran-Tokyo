@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lioran.tokyo/schemas/sample-product.spec.json",
+  "title": "Lioran—Tokyo VideoSpec (P1 firmware fixture)",
+  "description": "Hardcoded VideoSpec used by npm run render:fixture. Assets are local paths (not produced by an LLM). Locale of on-screen copy follows the sample product-page language.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "locale",
+    "brand",
+    "title",
+    "price",
+    "headline",
+    "captions",
+    "cta",
+    "tagline",
+    "urlHost",
+    "theme"
+  ],
+  "properties": {
+    "locale": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Product-page language, e.g. zh or en. On-screen text follows this."
+    },
+    "brand": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 48
+    },
+    "price": {
+      "type": "string",
+      "maxLength": 24
+    },
+    "compareAtPrice": {
+      "type": "string",
+      "maxLength": 24
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 48
+    },
+    "captions": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 42
+      }
+    },
+    "cta": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 24
+    },
+    "tagline": {
+      "type": "string",
+      "maxLength": 48
+    },
+    "urlHost": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "accent"
+      ],
+      "properties": {
+        "background": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6})$"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6})$"
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logo": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Local path to a logo image. Preferred for intro/outro."
+        },
+        "productImage": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Local path to the main product image. Used when logo is absent."
+        }
+      }
+    }
+  }
+}

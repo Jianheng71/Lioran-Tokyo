@@ -1,0 +1,171 @@
+<template id="scene5-outro-template">
+  <div
+    data-composition-id="scene5-outro"
+    data-width="1080"
+    data-height="1920"
+    data-duration="4.5"
+  >
+    <div class="outro-stage">
+      <div class="logo-glow"></div>
+      <img
+        class="brand-mark"
+        data-var-src="brandMark"
+        src="assets/logo.png"
+        alt=""
+      />
+      <div class="brand-name" data-var-text="brand">Brand</div>
+      <div class="tagline" data-var-text="tagline"></div>
+      <div class="url-pill">
+        <span class="url-text" data-var-text="urlHost">example.com</span>
+      </div>
+    </div>
+
+    <style>
+      @font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url("assets/fonts/inter-latin-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("assets/fonts/noto-sans-sc-700.woff2") format("woff2");
+}
+      [data-composition-id="scene5-outro"] {
+        background: var(--background, #0a0a0f);
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+        overflow: hidden;
+        color: #ffffff;
+      }
+      [data-composition-id="scene5-outro"] .outro-stage {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+      }
+      [data-composition-id="scene5-outro"] .logo-glow {
+        position: absolute;
+        width: 520px;
+        height: 520px;
+        border-radius: 50%;
+        background: radial-gradient(circle, color-mix(in srgb, var(--accent, #C41E3A) 35%, transparent) 0%, transparent 70%);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      [data-composition-id="scene5-outro"] .brand-mark {
+        width: 280px;
+        height: 280px;
+        object-fit: contain;
+        border-radius: 56px;
+        position: relative;
+        z-index: 1;
+        opacity: 0;
+      }
+      [data-composition-id="scene5-outro"] .brand-name {
+        font-size: 64px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: center;
+        z-index: 1;
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+        opacity: 0;
+      }
+      [data-composition-id="scene5-outro"] .tagline {
+        font-size: 40px;
+        font-weight: 500;
+        text-align: center;
+        max-width: 860px;
+        z-index: 1;
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+        opacity: 0;
+      }
+      [data-composition-id="scene5-outro"] .url-pill {
+        background: #1a1a1f;
+        border: 1px solid #2c2c2c;
+        border-radius: 100px;
+        padding: 10px 28px;
+        z-index: 1;
+        opacity: 0;
+      }
+      [data-composition-id="scene5-outro"] .url-text {
+        font-size: 28px;
+        color: #c8c8c8;
+        letter-spacing: 0.4px;
+        font-family: "Noto Sans SC", "Inter", sans-serif;
+      }
+    </style>
+
+    <script src="assets/gsap.min.js"></script>
+    <script>
+      (function () {
+        const tl = gsap.timeline({ paused: true });
+        const root = '[data-composition-id="scene5-outro"]';
+        const mark = root + " .brand-mark";
+        const name = root + " .brand-name";
+        const tagline = root + " .tagline";
+        const pill = root + " .url-pill";
+        const glow = root + " .logo-glow";
+
+        tl.fromTo(glow, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" }, 0.1);
+        tl.fromTo(mark, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, 0.15);
+        tl.fromTo(name, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.4);
+        tl.fromTo(tagline, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 1.1);
+        tl.fromTo(pill, { y: 15, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 1.5);
+        tl.to(glow, { opacity: 0.35, duration: 1.2, ease: "power2.out" }, 1.2);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["scene5-outro"] = tl;
+      })();
+    </script>
+  </div>
+</template>

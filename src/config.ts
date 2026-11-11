@@ -1,0 +1,49 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+dotenv.config({ path: path.join(root, ".env") });
+
+function intEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+export const config = {
+  root,
+  port: intEnv("PORT", 8787),
+  hermesBaseUrl: (process.env.HERMES_BASE_URL || "http://127.0.0.1:43127").replace(/\/$/, ""),
+  hermesModel: process.env.HERMES_MODEL || "hermes3:8b",
+  hermesTimeoutMs: intEnv("HERMES_TIMEOUT_MS", 60_000),
+  hyperframesVersion: process.env.HYPERFRAMES_VERSION || "0.9.32",
+  crawlTimeoutMs: intEnv("CRAWL_TIMEOUT_MS", 45_000),
+  renderTimeoutMs: intEnv("RENDER_TIMEOUT_MS", 600_000),
+  jobRetention: intEnv("JOB_RETENTION", 20),
+  chromePath: process.env.CHROME_PATH || "",
+  paths: {
+    templates: path.join(root, "templates", "product-promo"),
+    fixtures: path.join(root, "fixtures"),
+    data: path.join(root, "data"),
+    jobs: path.join(root, "data", "jobs"),
+    sessions: path.join(root, "data", "sessions"),
+    downloads: path.join(root, "data", "downloads"),
+    public: path.join(root, "public"),
+    renderLock: path.join(root, ".render.lock"),
+    browserLock: path.join(root, ".browser.lock"),
+  },
+} as const;
+
+export function ensureDataDirs(): void {
+  for (const dir of [
+    config.paths.data,
+    config.paths.jobs,
+    config.paths.sessions,
+    config.paths.downloads,
+  ]) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
