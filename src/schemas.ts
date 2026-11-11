@@ -2,6 +2,16 @@ import { z } from "zod";
 
 const hexColor = z.string().regex(/^#([0-9A-Fa-f]{6})$/);
 
+export const TemplateIdSchema = z.enum([
+  "product-promo",
+  "cinematic-product",
+  "kinetic-typo",
+  "brand-story",
+  "social-ad",
+]);
+
+export type TemplateId = z.infer<typeof TemplateIdSchema>;
+
 export const ProductFactsSchema = z.object({
   sourceUrl: z.string().url(),
   title: z.string().min(1),
@@ -37,6 +47,8 @@ export const VideoSpecSchema = z.object({
     background: hexColor,
     accent: hexColor,
   }),
+  /** Which fillable HyperFrames template to render. Default: official product-promo. */
+  templateId: TemplateIdSchema.default("product-promo"),
 });
 
 export type VideoSpec = z.infer<typeof VideoSpecSchema>;
@@ -48,6 +60,7 @@ export const DialogPlanSchema = z.object({
     mode: z.enum(["new_from_url", "revise", "unclear"]),
     url: z.string().nullable(),
     instruction: z.string().nullable(),
+    templateId: TemplateIdSchema.nullable().default(null),
   }),
   questions: z.array(z.string()).default([]),
 });
@@ -75,6 +88,7 @@ export interface JobRecord {
   kind: "url" | "instruction";
   url?: string;
   instruction?: string;
+  templateId?: TemplateId;
   stageDetail?: string;
 }
 
@@ -95,6 +109,7 @@ export interface SessionRecord {
       url: string | null;
       instruction: string | null;
       summary: string | null;
+      templateId: TemplateId | null;
     };
     phase:
       | "idle"

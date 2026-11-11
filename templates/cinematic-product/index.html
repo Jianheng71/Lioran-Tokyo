@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"zh"},{"id":"brand","type":"string","label":"Brand name","default":"Brand"},{"id":"tagline","type":"string","label":"Tagline","default":""},{"id":"title","type":"string","label":"Product name","default":"Product"},{"id":"price","type":"string","label":"Price","default":""},{"id":"productSubtitle","type":"string","label":"Product subtitle","default":""},{"id":"featuresTitle","type":"string","label":"Features title","default":""},{"id":"caption1","type":"string","label":"Selling point 1","default":""},{"id":"caption2","type":"string","label":"Selling point 2","default":""},{"id":"caption3","type":"string","label":"Selling point 3","default":""},{"id":"featureDesc1","type":"string","label":"Selling point 1 detail","default":""},{"id":"featureDesc2","type":"string","label":"Selling point 2 detail","default":""},{"id":"featureDesc3","type":"string","label":"Selling point 3 detail","default":""},{"id":"ctaTitle","type":"string","label":"CTA title","default":""},{"id":"ctaSubtitle","type":"string","label":"CTA subtitle","default":""},{"id":"cta","type":"string","label":"CTA button","default":"Learn more"},{"id":"urlHost","type":"string","label":"URL","default":"example.com"},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#00ff88"},{"id":"brandMark","type":"image","label":"Logo or product image","default":"assets/logo.png"}]'>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <title>Cinematic Product</title>
+  <script src="assets/gsap.min.js"></script>
+  <link rel="stylesheet" href="assets/motion-effects.css" />
+  <style>
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/inter-latin-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/inter-latin-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/inter-latin-600.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:block;src:url("assets/fonts/inter-latin-800.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/noto-sans-sc-400.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/noto-sans-sc-500.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/noto-sans-sc-600.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:700;font-display:block;src:url("assets/fonts/noto-sans-sc-700.woff2") format("woff2")}
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--background,#0a0a0a);color:#fff;font-family:"Noto Sans SC","Inter",sans-serif}
+    #root{position:relative;width:1080px;height:1920px;overflow:hidden}
+    .scene{position:absolute;inset:0;width:1080px;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;visibility:hidden}
+    .opening-scene{background:radial-gradient(ellipse at 30% 20%,#1a0a2e 0%,#0a0a0a 50%,#000 100%)}
+    .spotlight{position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);border-radius:50%;filter:blur(60px);animation:spotlight-move 4s ease-in-out infinite}
+    @keyframes spotlight-move{0%,100%{transform:translate(-100px,-100px) scale(1)}50%{transform:translate(100px,100px) scale(1.2)}}
+    .brand-logo{font-size:96px;font-weight:900;letter-spacing:12px;text-transform:uppercase;background:linear-gradient(135deg,#fff 0%,#888 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;max-width:960px;word-break:break-word}
+    .tagline{font-size:28px;letter-spacing:6px;color:var(--accent,#00ff88);margin-top:24px;text-transform:uppercase;text-align:center;max-width:900px}
+    .product-scene{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 50%,#0a0a0a 100%)}
+    .product-container{position:relative;width:520px;height:640px;perspective:1000px}
+    .product-card{width:100%;height:100%;background:linear-gradient(145deg,#1a1a1a,#2a2a2a);border-radius:30px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;box-shadow:0 0 60px color-mix(in srgb, var(--accent,#00ff88) 25%, transparent),inset 0 0 60px rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+    .product-badge{position:absolute;top:-16px;right:-16px;background:var(--accent,#00ff88);color:#000;padding:12px 24px;border-radius:50px;font-weight:700;font-size:18px}
+    .product-icon{width:280px;height:280px;object-fit:contain;filter:drop-shadow(0 0 30px color-mix(in srgb, var(--accent,#00ff88) 50%, transparent))}
+    .product-name{font-size:40px;font-weight:800;margin-top:24px;text-transform:uppercase;letter-spacing:2px;text-align:center;max-width:440px}
+    .product-price{font-size:36px;font-weight:700;color:var(--accent,#00ff88);margin-top:12px}
+    .product-subtitle{font-size:20px;color:#888;margin-top:10px;text-align:center}
+    .features-scene{background:#0a0a0a}
+    .features-title{font-size:56px;font-weight:800;margin-bottom:48px;text-transform:uppercase;text-align:center;max-width:960px}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;width:960px}
+    .feature-item{text-align:center;padding:32px 20px;background:linear-gradient(145deg,rgba(255,255,255,.05),transparent);border-radius:20px;border:1px solid rgba(255,255,255,.1)}
+    .feature-title{font-size:22px;font-weight:700;margin-bottom:10px}
+    .feature-desc{font-size:16px;color:#888;line-height:1.5;min-height:1.5em}
+    .cta-scene{background:linear-gradient(135deg,#0a0a0a 0%,#1a0a1a 50%,#0a0a0a 100%)}
+    .cta-title{font-size:64px;font-weight:900;text-transform:uppercase;text-align:center;margin-bottom:24px;background:linear-gradient(90deg,var(--accent,#00ff88),#00ccff,var(--accent,#00ff88));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradient-shift 3s linear infinite;max-width:960px}
+    @keyframes gradient-shift{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+    .cta-subtitle{font-size:26px;color:#888;margin-bottom:40px;text-align:center;max-width:900px}
+    .cta-button{padding:24px 56px;background:linear-gradient(135deg,var(--accent,#00ff88),#00cc6a);color:#000;font-size:24px;font-weight:700;border-radius:60px;text-decoration:none;display:inline-block;box-shadow:0 0 40px color-mix(in srgb, var(--accent,#00ff88) 40%, transparent),0 10px 40px rgba(0,0,0,.3)}
+    .cta-url{font-size:20px;color:#555;margin-top:28px;letter-spacing:4px}
+    .particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+    .particle{position:absolute;width:3px;height:3px;background:color-mix(in srgb, var(--accent,#00ff88) 60%, transparent);border-radius:50%;animation:float-up 12s linear infinite}
+    @keyframes float-up{0%{transform:translateY(1920px) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100px) scale(1);opacity:0}}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="18" data-fps="30" data-width="1080" data-height="1920">
+    <div class="particles" id="particles" data-no-timeline></div>
+    <div class="scene opening-scene" id="scene1" data-start="0" data-duration="4" data-track-index="1" data-no-timeline>
+      <div class="spotlight"></div>
+      <div class="vignette"></div>
+      <h1 class="brand-logo" id="brandLogo" data-var-text="brand">Brand</h1>
+      <p class="tagline" id="tagline" data-var-text="tagline"></p>
+    </div>
+    <div class="scene product-scene" id="scene2" data-start="4" data-duration="5" data-track-index="1" data-no-timeline>
+      <div class="product-container" id="productContainer">
+        <div class="product-card" id="productCard">
+          <span class="product-badge" data-var-text="price">NEW</span>
+          <img class="product-icon" id="productIcon" data-var-src="brandMark" src="assets/logo.png" alt="" />
+          <h2 class="product-name" id="productName" data-var-text="title">Product</h2>
+          <p class="product-price" id="productPrice" data-var-text="price"></p>
+          <p class="product-subtitle" id="productSubtitle" data-var-text="productSubtitle"></p>
+        </div>
+      </div>
+    </div>
+    <div class="scene features-scene" id="scene3" data-start="9" data-duration="5" data-track-index="1" data-no-timeline>
+      <h2 class="features-title" id="featuresTitle" data-var-text="featuresTitle"></h2>
+      <div class="features-grid" id="featuresGrid">
+        <div class="feature-item"><h3 class="feature-title" data-var-text="caption1"></h3><p class="feature-desc" data-var-text="featureDesc1"></p></div>
+        <div class="feature-item"><h3 class="feature-title" data-var-text="caption2"></h3><p class="feature-desc" data-var-text="featureDesc2"></p></div>
+        <div class="feature-item"><h3 class="feature-title" data-var-text="caption3"></h3><p class="feature-desc" data-var-text="featureDesc3"></p></div>
+      </div>
+    </div>
+    <div class="scene cta-scene" id="scene4" data-start="14" data-duration="4" data-track-index="1" data-no-timeline>
+      <h2 class="cta-title" id="ctaTitle" data-var-text="ctaTitle"></h2>
+      <p class="cta-subtitle" id="ctaSubtitle" data-var-text="ctaSubtitle"></p>
+      <a href="#" class="cta-button" id="ctaButton" data-var-text="cta">Learn more</a>
+      <p class="cta-url" id="ctaUrl" data-var-text="urlHost">example.com</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const vars = window.__hyperframes ? window.__hyperframes.getVariables() : {};
+      if (vars.locale) document.documentElement.lang = String(vars.locale);
+      if (vars.brand) document.title = String(vars.brand);
+      // Hide empty price badge / price line
+      const price = String(vars.price || '');
+      const badge = document.querySelector('.product-badge');
+      if (badge && !price) badge.style.display = 'none';
+      const priceEl = document.getElementById('productPrice');
+      if (priceEl && !price) priceEl.style.display = 'none';
+      // Deterministic particles (no Math.random)
+      const seeds = [8,22,35,48,61,74,12,28,41,55,68,82,18,33,47,59,71,85,25,52];
+      const delays = [0,0.4,0.8,1.2,1.6,2.0,0.2,0.6,1.0,1.4,1.8,2.2,0.3,0.7,1.1,1.5,1.9,2.3,0.5,0.9];
+      const durs = [8,9,10,11,12,9.5,10.5,11.5,8.5,12.5,9,10,11,8,12,9.5,10.5,11.5,8.5,10];
+      const box = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = seeds[i] + '%';
+        p.style.animationDelay = delays[i] + 's';
+        p.style.animationDuration = durs[i] + 's';
+        box.appendChild(p);
+      }
+
+      const tl = gsap.timeline({ paused: true });
+      // Act 1: 0–4
+      tl.set('#scene1', { opacity: 1, visibility: 'visible' }, 0)
+        .fromTo('#brandLogo', { scale: 0, rotationY: 90, opacity: 0 }, { scale: 1, rotationY: 0, opacity: 1, duration: 1.5, ease: 'elastic.out(1, 0.5)' }, 0)
+        .fromTo('#tagline', { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'power3.out' }, 1.0)
+        .to('#brandLogo', { scale: 1.1, duration: 1, yoyo: true, repeat: 1, ease: 'power2.inOut' }, 2.0)
+        .to('#scene1', { opacity: 0, duration: 0.8, ease: 'power2.in' }, 3.2)
+        .set('#scene1', { visibility: 'hidden' }, 4.0);
+
+      // Act 2: 4–9
+      tl.set('#scene2', { opacity: 1, visibility: 'visible' }, 4)
+        .fromTo('#productContainer', { z: -500, rotateY: 30, opacity: 0 }, { z: 0, rotateY: 0, opacity: 1, duration: 1.5, ease: 'power3.out' }, 4)
+        .fromTo('#productIcon', { scale: 0 }, { scale: 1, duration: 1, ease: 'back.out(1.7)' }, 4.5)
+        .fromTo('#productName', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }, 5.0)
+        .fromTo(['#productPrice','#productSubtitle'], { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, 5.4)
+        .to('#productCard', { rotateY: 15, rotateX: 5, duration: 1.5, ease: 'power2.inOut', yoyo: true, repeat: 1 }, 6.0)
+        .to('#scene2', { opacity: 0, duration: 0.8, ease: 'power2.in' }, 8.2)
+        .set('#scene2', { visibility: 'hidden' }, 9.0);
+
+      // Act 3: 9–14
+      tl.set('#scene3', { opacity: 1, visibility: 'visible' }, 9)
+        .fromTo('#featuresTitle', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 1, ease: 'power3.inOut' }, 9)
+        .fromTo('.feature-item', { y: 80, opacity: 0, scale: 0.8 }, { y: 0, opacity: 1, scale: 1, duration: 0.8, stagger: 0.2, ease: 'back.out(1.7)' }, 9.7)
+        .to('.feature-item', { y: -10, duration: 0.5, stagger: 0.1, ease: 'power2.out', yoyo: true, repeat: 1 }, 11.5)
+        .to('#scene3', { opacity: 0, duration: 0.8, ease: 'power2.in' }, 13.2)
+        .set('#scene3', { visibility: 'hidden' }, 14.0);
+
+      // Act 4: 14–18
+      tl.set('#scene4', { opacity: 1, visibility: 'visible' }, 14)
+        .fromTo('#ctaTitle', { scale: 2, opacity: 0, filter: 'blur(20px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' }, 14)
+        .fromTo('#ctaSubtitle', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }, 14.7)
+        .fromTo('#ctaButton', { scale: 0 }, { scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.5)' }, 15.0)
+        .fromTo('#ctaUrl', { opacity: 0, letterSpacing: '20px' }, { opacity: 1, letterSpacing: '4px', duration: 1, ease: 'power3.out' }, 15.3)
+        .to('#ctaButton', { boxShadow: '0 0 60px rgba(0,255,136,0.6), 0 0 100px rgba(0,255,136,0.3)', scale: 1.05, duration: 0.6, yoyo: true, repeat: 3, ease: 'power2.inOut' }, 16.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['main'] = tl;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"impact","type":"string","label":"Impact word","default":"Brand"},{"id":"line1","type":"string","label":"Split line 1","default":"Key"},{"id":"line2","type":"string","label":"Split line 2","default":"Point"},{"id":"highlight","type":"string","label":"Highlight box","default":"Highlight"},{"id":"brand","type":"string","label":"Brand name","default":"Brand"},{"id":"cta","type":"string","label":"CTA","default":"Learn more"},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"}]'>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <title>Kinetic Typography</title>
+  <script src="assets/gsap.min.js"></script>
+  <link rel="stylesheet" href="assets/motion-effects.css" />
+  <style>
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/inter-latin-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/inter-latin-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/inter-latin-600.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:block;src:url("assets/fonts/inter-latin-800.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/noto-sans-sc-400.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/noto-sans-sc-500.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/noto-sans-sc-600.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:700;font-display:block;src:url("assets/fonts/noto-sans-sc-700.woff2") format("woff2")}
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--background,#0a0a0a);color:#fff;font-family:"Noto Sans SC","Inter",sans-serif}
+    #root{position:relative;width:1080px;height:1920px;overflow:hidden}
+    .scene{position:absolute;inset:0;width:1080px;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;visibility:hidden}
+    .glitch-bg{position:absolute;inset:0;background:linear-gradient(45deg,transparent 48%,rgba(255,0,128,.03) 50%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(0,255,255,.03) 50%,transparent 52%);background-size:60px 60px;animation:bg-glitch .5s infinite}
+    @keyframes bg-glitch{0%,100%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(2px,-2px)}60%{transform:translate(-2px,-2px)}80%{transform:translate(2px,2px)}}
+    .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.6) 100%);pointer-events:none}
+    .big-text{font-size:120px;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:0;text-align:center;max-width:980px;word-break:break-word}
+    .medium-text{font-size:72px;font-weight:800;text-transform:uppercase}
+    .accent-text{font-size:56px;font-weight:700;color:var(--accent,#ff0080);text-shadow:0 0 40px color-mix(in srgb, var(--accent,#ff0080) 50%, transparent)}
+    .glitch-text{position:relative;animation:text-glitch 3s infinite}
+    @keyframes text-glitch{0%,90%,100%{transform:translate(0);filter:none}92%{transform:translate(-5px,2px);filter:hue-rotate(90deg)}94%{transform:translate(5px,-2px);filter:hue-rotate(-90deg)}96%{transform:translate(-3px,-3px)}98%{transform:translate(3px,3px)}}
+    .char{display:inline-block;transform-origin:center bottom}
+    .highlight-box{background:linear-gradient(135deg,var(--accent,#ff0080),#ff8c00);padding:20px 40px;transform:skew(-10deg);margin:20px 0}
+    .highlight-box span{display:block;transform:skew(10deg);font-size:40px;font-weight:800;text-align:center;max-width:860px}
+    .cta-pulse{font-size:32px;padding:20px 48px;background:#00ff88;color:#000;font-weight:800;border-radius:50px;margin-top:40px;animation:pulse-glow 1.5s ease-in-out infinite}
+    @keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(0,255,136,.4);transform:scale(1)}50%{box-shadow:0 0 60px rgba(0,255,136,.8);transform:scale(1.05)}}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="15.15" data-fps="30" data-width="1080" data-height="1920">
+    <div class="glitch-bg" data-no-timeline></div>
+    <div class="vignette" data-no-timeline></div>
+    <div class="scene" id="scene1" data-start="0" data-duration="3.65" data-track-index="1" data-no-timeline>
+      <h1 class="big-text glitch-text" id="impact1" data-var-text="impact">Brand</h1>
+    </div>
+    <div class="scene" id="scene2" data-start="3.65" data-duration="3.9" data-track-index="1" data-no-timeline>
+      <h2 class="medium-text" id="dont" data-var-text="line1">Key</h2>
+      <h2 class="accent-text" id="settle" data-var-text="line2">Point</h2>
+    </div>
+    <div class="scene" id="scene3" data-start="7.55" data-duration="3.6" data-track-index="1" data-no-timeline>
+      <div class="highlight-box" id="highlightBox"><span id="highlightText" data-var-text="highlight">Highlight</span></div>
+    </div>
+    <div class="scene" id="scene4" data-start="11.15" data-duration="4" data-track-index="1" data-no-timeline>
+      <h2 class="big-text" id="brand" data-var-text="brand" style="font-size:88px">Brand</h2>
+      <div class="cta-pulse" id="cta" data-var-text="cta">Learn more</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const vars = window.__hyperframes ? window.__hyperframes.getVariables() : {};
+      if (vars.locale) document.documentElement.lang = String(vars.locale);
+
+      function hasCjk(s) {
+        return /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/.test(s);
+      }
+      function splitChars(el) {
+        const text = el.textContent || '';
+        // Do not split CJK titles into per-glyph spans.
+        if (!text || hasCjk(text)) return;
+        el.innerHTML = text.split('').map((c) => '<span class="char">' + (c === ' ' ? '\u00A0' : c) + '</span>').join('');
+      }
+      splitChars(document.getElementById('impact1'));
+      // brand split after variables applied — data-var-text already set text
+      splitChars(document.getElementById('brand'));
+
+      const tl = gsap.timeline({ paused: true });
+      const t0 = 0, t1 = 3.65, t2 = 7.55, t3 = 11.15;
+
+      tl.set('#scene1', { opacity: 1, visibility: 'visible' }, t0)
+        .from('#scene1 .char', { y: 200, rotation: 90, opacity: 0, duration: 0.8, stagger: 0.1, ease: 'back.out(1.7)' }, t0)
+        .to('#scene1 .char', { scale: 1.2, duration: 0.3, stagger: 0.05, ease: 'power2.out', yoyo: true, repeat: 1 }, t0 + 1.5)
+        .to('#scene1', { opacity: 0, scale: 1.5, filter: 'blur(20px)', duration: 0.8, ease: 'power2.in' }, t0 + 2.85)
+        .set('#scene1', { visibility: 'hidden' }, t1);
+
+      tl.set('#scene2', { opacity: 1, visibility: 'visible' }, t1)
+        .from('#dont', { x: -1080, opacity: 0, duration: 0.6, ease: 'power3.out' }, t1)
+        .from('#settle', { x: 1080, opacity: 0, duration: 0.6, ease: 'power3.out' }, t1 + 0.2)
+        .to('#settle', { textShadow: '0 0 80px rgba(255,0,128,0.8)', scale: 1.1, duration: 0.5, yoyo: true, repeat: 3 }, t1 + 1.1)
+        .to('#scene2', { opacity: 0, duration: 0.5, ease: 'power2.in' }, t1 + 3.4)
+        .set('#scene2', { visibility: 'hidden' }, t2);
+
+      tl.set('#scene3', { opacity: 1, visibility: 'visible' }, t2)
+        .from('#highlightBox', { scale: 0, rotation: -180, opacity: 0, duration: 1, ease: 'elastic.out(1, 0.5)' }, t2)
+        .to('#highlightBox', { skewX: -20, duration: 0.2, yoyo: true, repeat: 5, ease: 'power2.inOut' }, t2 + 1.3)
+        .to('#scene3', { opacity: 0, x: -200, duration: 0.6, ease: 'power2.in' }, t2 + 3.0)
+        .set('#scene3', { visibility: 'hidden' }, t3);
+
+      tl.set('#scene4', { opacity: 1, visibility: 'visible' }, t3)
+        .from('#brand .char', { opacity: 0, y: 100, rotationX: 90, duration: 0.6, stagger: 0.08, ease: 'back.out(1.7)' }, t3)
+        .from('#cta', { scale: 0, opacity: 0, duration: 0.8, ease: 'elastic.out(1, 0.5)' }, t3 + 0.78)
+        .to('#cta', { boxShadow: '0 0 100px rgba(0,255,136,1)', duration: 0.5, yoyo: true, repeat: 3, ease: 'power2.inOut' }, t3 + 1.6);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['main'] = tl;
+    })();
+  </script>
+</body>
+</html>

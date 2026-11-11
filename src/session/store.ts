@@ -19,7 +19,7 @@ function blankSession(sessionId: string): SessionRecord {
     assetPaths: { logo: null, productImage: null },
     chat: {
       messages: [],
-      draft: { mode: null, url: null, instruction: null, summary: null },
+      draft: { mode: null, url: null, instruction: null, summary: null, templateId: null },
       phase: "idle",
       activeJobId: null,
     },

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"flash1","type":"string","label":"Flash line 1","default":""},{"id":"flash2","type":"string","label":"Flash line 2","default":""},{"id":"offer","type":"string","label":"Offer / discount","default":""},{"id":"cta","type":"string","label":"CTA button","default":"Learn more"},{"id":"brand","type":"string","label":"Brand","default":"Brand"},{"id":"title","type":"string","label":"Product name","default":"Product"},{"id":"price","type":"string","label":"Price","default":""},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"},{"id":"brandMark","type":"image","label":"Product / logo image","default":"assets/product.png"}]'>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <title>Social Ad</title>
+  <script src="assets/gsap.min.js"></script>
+  <style>
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/inter-latin-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/inter-latin-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/inter-latin-600.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:block;src:url("assets/fonts/inter-latin-800.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/noto-sans-sc-400.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/noto-sans-sc-500.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/noto-sans-sc-600.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:700;font-display:block;src:url("assets/fonts/noto-sans-sc-700.woff2") format("woff2")}
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--background,#0a0a0a);font-family:"Noto Sans SC","Inter",system-ui,sans-serif}
+    #root{width:1080px;height:1920px;position:relative;overflow:hidden}
+    .scene{position:absolute;inset:0;width:1080px;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;opacity:0;visibility:hidden}
+    .s1{background:linear-gradient(135deg,var(--accent,#ff0080),#7928ca)}
+    .big{font-size:140px;font-weight:900;text-transform:uppercase;letter-spacing:0;line-height:.95;text-align:center;max-width:980px;word-break:break-word}
+    .s2{background:#0a0a0a}
+    .product{width:700px;height:700px;background:linear-gradient(145deg,#1a1a1a,#2a2a2a);border-radius:40px;display:flex;justify-content:center;align-items:center;overflow:hidden}
+    .product img{width:80%;height:80%;object-fit:contain}
+    .product-name{position:absolute;bottom:180px;font-size:36px;font-weight:700;text-align:center;max-width:900px}
+    .s3{background:var(--accent,#ff0080)}
+    .cta{font-size:72px;font-weight:900;text-transform:uppercase;text-align:center;max-width:960px}
+    .btn{padding:40px 100px;background:#000;color:var(--accent,#ff0080);font-size:36px;font-weight:800;border-radius:70px;margin-top:60px}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+    <div class="scene s1" id="c1" data-start="0" data-duration="2.5" data-track-index="1" data-no-timeline>
+      <h1 class="big" id="flash1" data-var-text="flash1"></h1>
+      <h1 class="big" id="flash2" data-var-text="flash2"></h1>
+    </div>
+    <div class="scene s2" id="c2" data-start="2.5" data-duration="7.5" data-track-index="1" data-no-timeline>
+      <div class="product" id="productCard"><img data-var-src="brandMark" src="assets/product.png" alt="" /></div>
+      <p class="product-name" data-var-text="title">Product</p>
+    </div>
+    <div class="scene s3" id="c3" data-start="10" data-duration="5" data-track-index="1" data-no-timeline>
+      <h1 class="cta" id="offer" data-var-text="offer"></h1>
+      <div class="btn" id="btn" data-var-text="cta">Learn more</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const vars = window.__hyperframes ? window.__hyperframes.getVariables() : {};
+      if (vars.locale) document.documentElement.lang = String(vars.locale);
+      if (vars.brand) document.title = String(vars.brand);
+
+      const tl = gsap.timeline({ paused: true });
+      // Scene 1 ~2.5s (original ~2s + hold)
+      tl.set('#c1', { opacity: 1, visibility: 'visible' }, 0)
+        .from('.big', { scale: 0, rotation: -10, opacity: 0, duration: 0.8, stagger: 0.2, ease: 'back.out(1.7)' }, 0)
+        .to('#c1', { opacity: 0, duration: 0.5, ease: 'power2.in' }, 2.0)
+        .set('#c1', { visibility: 'hidden' }, 2.5);
+
+      // Scene 2 2.5–10 (original rotate yoyo chain ~7.8s)
+      tl.set('#c2', { opacity: 1, visibility: 'visible' }, 2.5)
+        .from('#productCard', { scale: 0, rotateY: 90, duration: 1, ease: 'power3.out' }, 2.5)
+        .to('#productCard', { rotateY: 20, duration: 2, yoyo: true, repeat: 2, ease: 'power1.inOut' }, 3.6)
+        .to('#c2', { opacity: 0, duration: 0.5, ease: 'power2.in' }, 9.5)
+        .set('#c2', { visibility: 'hidden' }, 10);
+
+      // Scene 3 10–15
+      tl.set('#c3', { opacity: 1, visibility: 'visible' }, 10)
+        .from('#offer', { scale: 2, opacity: 0, duration: 0.8, ease: 'power3.out' }, 10)
+        .from('#btn', { y: 100, opacity: 0, duration: 0.6, ease: 'power3.out' }, 10.5)
+        .to('#btn', { scale: 1.05, duration: 0.6, yoyo: true, repeat: 3, ease: 'power2.inOut' }, 11.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['main'] = tl;
+    })();
+  </script>
+</body>
+</html>

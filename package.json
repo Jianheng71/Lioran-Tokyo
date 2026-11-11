@@ -2,7 +2,7 @@
   "name": "lioran-tokyo",
   "private": true,
   "type": "module",
-  "description": "Lioran—Tokyo: local AI dialog → crawl → Hermes VideoSpec JSON → official HyperFrames variables → silent 15s 9:16 MP4.",
+  "description": "Lioran—Tokyo: local AI dialog → crawl → Hermes VideoSpec JSON → official HyperFrames variables → silent 9:16 MP4 (five fillable templates).",
   "engines": {
     "node": ">=20"
   },
@@ -11,6 +11,10 @@
     "start": "tsx src/server.ts",
     "doctor": "tsx scripts/doctor.ts",
     "render:fixture": "node scripts/render-fixture.js",
+    "render:fixture:cinematic": "TEMPLATE=cinematic-product node scripts/render-fixture.js",
+    "render:fixture:kinetic": "TEMPLATE=kinetic-typo node scripts/render-fixture.js",
+    "render:fixture:brand": "TEMPLATE=brand-story node scripts/render-fixture.js",
+    "render:fixture:social": "TEMPLATE=social-ad node scripts/render-fixture.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

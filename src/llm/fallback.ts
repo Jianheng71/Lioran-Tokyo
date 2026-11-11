@@ -30,7 +30,10 @@ function formatCompare(facts: ProductFacts): string {
 }
 
 /** Deterministic VideoSpec from ProductFacts when Hermes fails validation twice. */
-export function videoSpecFromFacts(facts: ProductFacts): VideoSpec {
+export function videoSpecFromFacts(
+  facts: ProductFacts,
+  templateId: VideoSpec["templateId"] = "product-promo",
+): VideoSpec {
   const zh = facts.localeHint.toLowerCase().startsWith("zh");
   const title = clip(facts.title, 48);
   const brand = clip(facts.brand || facts.urlHost, 40);
@@ -63,6 +66,7 @@ export function videoSpecFromFacts(facts: ProductFacts): VideoSpec {
       background: "#0a0a0f",
       accent: "#C41E3A",
     },
+    templateId,
   };
 }
 
@@ -86,5 +90,6 @@ export function mergeSpecDefaults(next: Partial<VideoSpec>, prev: VideoSpec): Vi
       background: next.theme?.background || prev.theme.background,
       accent: next.theme?.accent || prev.theme.accent,
     },
+    templateId: next.templateId || prev.templateId || "product-promo",
   };
 }

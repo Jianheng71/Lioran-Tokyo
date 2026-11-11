@@ -2,13 +2,21 @@ import { understandMessage } from "../llm/dialog.js";
 import { enqueueInstructionJob, enqueueUrlJob } from "../jobs/queue.js";
 import { getOrCreateSession, saveSession } from "../session/store.js";
 import type { DialogPlan, JobRecord, SessionRecord } from "../schemas.js";
+import { chooseTemplateId, DEFAULT_TEMPLATE_ID } from "../templates/catalog.js";
 
 function applyDraft(session: SessionRecord, plan: DialogPlan): void {
+  const templateId =
+    plan.understood.templateId ||
+    chooseTemplateId({
+      named: session.chat.draft.templateId,
+      message: plan.understood.instruction || plan.reply,
+    });
   session.chat.draft = {
     mode: plan.understood.mode === "unclear" ? null : plan.understood.mode,
     url: plan.understood.url,
     instruction: plan.understood.instruction,
     summary: plan.reply,
+    templateId,
   };
   if (plan.status === "need_clarification") session.chat.phase = "clarifying";
   else if (plan.status === "ready_to_confirm") session.chat.phase = "awaiting_confirm";
@@ -16,6 +24,7 @@ function applyDraft(session: SessionRecord, plan: DialogPlan): void {
 
 function startFromDraft(session: SessionRecord): JobRecord {
   const draft = session.chat.draft;
+  const templateId = draft.templateId || DEFAULT_TEMPLATE_ID;
   if (draft.mode === "revise") {
     if (!draft.instruction) {
       throw Object.assign(new Error("Missing revision instruction"), { status: 400 });
@@ -23,13 +32,14 @@ function startFromDraft(session: SessionRecord): JobRecord {
     return enqueueInstructionJob({
       sessionId: session.sessionId,
       instruction: draft.instruction,
+      templateId,
     });
   }
   if (draft.mode === "new_from_url") {
     if (!draft.url) {
       throw Object.assign(new Error("Missing product URL"), { status: 400 });
     }
-    return enqueueUrlJob({ url: draft.url, sessionId: session.sessionId });
+    return enqueueUrlJob({ url: draft.url, sessionId: session.sessionId, templateId });
   }
   throw Object.assign(new Error("Nothing to confirm yet"), { status: 400 });
 }
@@ -102,6 +112,7 @@ export function handleChatConfirm(sessionId: string): {
     });
   }
   const job = startFromDraft(session);
+  const templateId = session.chat.draft.templateId || DEFAULT_TEMPLATE_ID;
   session.chat.messages.push({
     role: "user",
     content: "Confirm",
@@ -109,7 +120,7 @@ export function handleChatConfirm(sessionId: string): {
   });
   session.chat.messages.push({
     role: "assistant",
-    content: "Understood. Starting the 15 second promo now.",
+    content: `Understood. Starting with the ${templateId} template now.`,
     at: new Date().toISOString(),
   });
   session.chat.phase = "running";
@@ -119,6 +130,6 @@ export function handleChatConfirm(sessionId: string): {
     sessionId: session.sessionId,
     jobId: job.jobId,
     status: "queued",
-    reply: "Understood. Starting the 15 second promo now.",
+    reply: `Understood. Starting with the ${templateId} template now.`,
   };
 }

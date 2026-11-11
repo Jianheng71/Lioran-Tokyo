@@ -1,30 +1,52 @@
 #!/usr/bin/env node
 /**
- * Lioran—Tokyo P1 firmware render.
+ * Lioran—Tokyo firmware render for any fillable template.
  *
- * Maps fixtures/sample-product.spec.json to a flat official variables file,
- * then calls HyperFrames:
- *   npx hyperframes@0.9.32 render <job-local project copy of templates/product-promo> \
- *     --output data/jobs/fixture/video.mp4 \
+ * Usage:
+ *   npm run render:fixture                         # product-promo (default)
+ *   npm run render:fixture:cinematic               # cinematic-product
+ *   TEMPLATE=kinetic-typo node scripts/render-fixture.js
+ *
+ * Maps fixtures/sample-product.spec.json (+ optional templateId) to a flat
+ * official variables file, then calls:
+ *   npx hyperframes@0.9.32 render <job-local project copy> \
+ *     --output data/jobs/<fixtureId>/video.mp4 \
  *     --fps 30 \
- *     --variables-file data/jobs/fixture/variables.json \
+ *     --variables-file data/jobs/<fixtureId>/variables.json \
  *     --strict-variables
  *
  * No Handlebars/EJS HTML generation, no crawler, no LLM.
- * Intro/outro slots use brandMark (logo if present, otherwise the main product
- * image) plus brand name. Video is silent. Motion and 15s timings stay locked
- * in the template. The template directory is not modified.
+ * Do not commit the MP4.
  */
 import { spawn, execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const lockedTemplateDir = path.join(here, "templates", "product-promo");
+const require = createRequire(import.meta.url);
+
+// Reuse the same variable mapping as the server templater when available via tsx,
+// otherwise fall back to an inline product-promo mapper for plain node.
+const TEMPLATE_IDS = [
+  "product-promo",
+  "cinematic-product",
+  "kinetic-typo",
+  "brand-story",
+  "social-ad",
+];
+
+const templateId = String(process.env.TEMPLATE || process.argv[2] || "product-promo");
+if (!TEMPLATE_IDS.includes(templateId)) {
+  console.error(`Unknown TEMPLATE="${templateId}". Use one of: ${TEMPLATE_IDS.join(", ")}`);
+  process.exit(1);
+}
+
+const lockedTemplateDir = path.join(here, "templates", templateId);
 const fixturePath = path.join(here, "fixtures", "sample-product.spec.json");
-const schemaPath = path.join(here, "fixtures", "sample-product.spec.schema.json");
-const jobDir = path.join(here, "data", "jobs", "fixture");
+const fixtureId = templateId === "product-promo" ? "fixture" : `fixture-${templateId}`;
+const jobDir = path.join(here, "data", "jobs", fixtureId);
 const projectDir = path.join(jobDir, "project");
 const variablesPath = path.join(jobDir, "variables.json");
 const defaultOutput = path.join(jobDir, "video.mp4");
@@ -160,16 +182,12 @@ function extOf(file) {
   return ext || ".png";
 }
 
-/**
- * Materialize a job-local copy of the locked template (left untouched) and
- * place the chosen mark under that copy's assets/ so the HyperFrames file
- * server can serve it. Returns a project-relative path for data-var-src.
- */
 function materializeProject() {
   fs.rmSync(projectDir, { recursive: true, force: true });
   fs.cpSync(lockedTemplateDir, projectDir, {
     recursive: true,
-    filter: (src) => !src.includes(`${path.sep}.hyperframes${path.sep}`) && !src.endsWith(`${path.sep}.hyperframes`),
+    filter: (src) =>
+      !src.includes(`${path.sep}.hyperframes${path.sep}`) && !src.endsWith(`${path.sep}.hyperframes`),
   });
 }
 
@@ -183,30 +201,134 @@ function stageBrandMark(absPath, destName) {
   return `assets/${destName}`;
 }
 
+function clip(text, max) {
+  const t = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(0, max - 1)).trim()}…`;
+}
+
 function specToVariables(spec) {
   const assets = spec.assets || {};
   const logoPath = assets.logo ? resolveAsset(assets.logo) : null;
   const productPath = assets.productImage ? resolveAsset(assets.productImage) : null;
-  // E4: prefer logo; if no logo, use the main product image.
   const markPath = logoPath || productPath;
   const destName = logoPath ? `logo${extOf(logoPath)}` : `product${extOf(productPath)}`;
   const brandMark = stageBrandMark(markPath, destName);
+  if (productPath) stageBrandMark(productPath, `product${extOf(productPath)}`);
 
+  const locale = String(spec.locale);
+  const brand = String(spec.brand);
+  const title = String(spec.title);
+  const price = String(spec.price ?? "");
+  const headline = String(spec.headline);
+  const tagline = String(spec.tagline ?? "");
+  const cta = String(spec.cta);
+  const urlHost = String(spec.urlHost);
+  const c1 = String(spec.captions[0]);
+  const c2 = String(spec.captions[1]);
+  const c3 = String(spec.captions[2]);
+  const background = String(spec.theme.background);
+  const accent = String(spec.theme.accent);
+
+  if (templateId === "product-promo") {
+    return {
+      locale,
+      brand,
+      title,
+      price,
+      compareAtPrice: String(spec.compareAtPrice ?? ""),
+      headline,
+      caption1: c1,
+      caption2: c2,
+      caption3: c3,
+      cta,
+      tagline,
+      urlHost,
+      background,
+      accent,
+      brandMark,
+    };
+  }
+  if (templateId === "cinematic-product") {
+    return {
+      locale,
+      brand,
+      tagline: tagline || headline,
+      title,
+      price,
+      productSubtitle: headline,
+      featuresTitle: locale.startsWith("zh") ? "为什么选它" : "Why Choose Us",
+      caption1: c1,
+      caption2: c2,
+      caption3: c3,
+      featureDesc1: "",
+      featureDesc2: "",
+      featureDesc3: "",
+      ctaTitle: headline || (locale.startsWith("zh") ? "立即了解" : "Get Started"),
+      ctaSubtitle: tagline || c3,
+      cta,
+      urlHost,
+      background: background === "#0a0a0f" ? "#0a0a0a" : background,
+      accent: accent === "#C41E3A" ? "#00ff88" : accent,
+      brandMark,
+    };
+  }
+  if (templateId === "kinetic-typo") {
+    const impact = clip(headline || title || brand, 16).toUpperCase();
+    const words = `${c1} ${c2}`.trim().split(/\s+/).filter(Boolean);
+    return {
+      locale,
+      impact,
+      line1: clip(words[0] || (locale.startsWith("zh") ? "不要" : "DON'T"), 16).toUpperCase(),
+      line2: clip(
+        words.slice(1).join(" ") || c2 || (locale.startsWith("zh") ? "将就" : "SETTLE"),
+        20,
+      ).toUpperCase(),
+      highlight: clip(c3 || title, 24).toUpperCase(),
+      brand: clip(brand, 20).toUpperCase(),
+      cta,
+      background: "#0a0a0a",
+      accent: "#ff0080",
+    };
+  }
+  if (templateId === "brand-story") {
+    const zh = locale.toLowerCase().startsWith("zh");
+    return {
+      locale,
+      welcome: zh ? "欢迎来到" : "Welcome to",
+      brand: clip(brand, 24).toUpperCase(),
+      tagline: tagline || headline,
+      story: clip([c1, c2, c3].filter(Boolean).join(" "), 160) || headline,
+      valueLine1: zh ? "以" : "Built with",
+      valueHighlight1: clip(c1 || "PASSION", 18).toUpperCase(),
+      valueLine2: zh ? "为你而" : "Designed for",
+      valueHighlight2: clip(c2 || "YOU", 12).toUpperCase(),
+      ctaPrefix: zh ? "加入" : "Join the",
+      journey: clip(c3 || (zh ? "旅程" : "JOURNEY"), 18).toUpperCase(),
+      cta,
+      background: "#0a0a0a",
+      accent: accent === "#C41E3A" ? "#e94560" : accent,
+    };
+  }
+  // social-ad
+  const flashSource = (headline || title || "FLASH SALE").trim();
+  const flashParts = flashSource.split(/\s+/);
   return {
-    locale: String(spec.locale),
-    brand: String(spec.brand),
-    title: String(spec.title),
-    price: String(spec.price ?? ""),
-    compareAtPrice: String(spec.compareAtPrice ?? ""),
-    headline: String(spec.headline),
-    caption1: String(spec.captions[0]),
-    caption2: String(spec.captions[1]),
-    caption3: String(spec.captions[2]),
-    cta: String(spec.cta),
-    tagline: String(spec.tagline ?? ""),
-    urlHost: String(spec.urlHost),
-    background: String(spec.theme.background),
-    accent: String(spec.theme.accent),
+    locale,
+    flash1: clip(flashParts[0] || (locale.startsWith("zh") ? "限时" : "FLASH"), 12).toUpperCase(),
+    flash2: clip(
+      flashParts.slice(1).join(" ") || (locale.startsWith("zh") ? "特惠" : "SALE"),
+      12,
+    ).toUpperCase(),
+    offer: price || c1 || (locale.startsWith("zh") ? "限时优惠" : "50% OFF"),
+    cta,
+    brand,
+    title,
+    price,
+    background: "#0a0a0a",
+    accent: "#ff0080",
     brandMark,
   };
 }
@@ -253,19 +375,20 @@ function stripAudio(file) {
 }
 
 async function main() {
+  void require;
   if (path.resolve(outputMp4) === path.resolve(step1Mp4)) {
     throw new Error("Refusing to overwrite step-1 output/test_product.mp4");
   }
   if (!fs.existsSync(lockedTemplateDir)) {
-    throw new Error(`Locked template not found: ${lockedTemplateDir}`);
+    throw new Error(`Template not found: ${lockedTemplateDir}`);
   }
 
   acquireLock();
   lockHeld = true;
 
   const spec = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
-  void schemaPath;
   validateSpec(spec);
+  spec.templateId = templateId;
 
   fs.mkdirSync(jobDir, { recursive: true });
   materializeProject();
@@ -287,11 +410,12 @@ async function main() {
     variablesPath,
     "--strict-variables",
   ];
+  console.log(`TEMPLATE=${templateId}`);
   console.log(`npx ${args.join(" ")}`);
   await run("npx", args, here);
 
   if (hasAudioStream(outputMp4)) {
-    console.log("Stripping audio track (P1 is silent).");
+    console.log("Stripping audio track (MVP is silent).");
     stripAudio(outputMp4);
   }
 

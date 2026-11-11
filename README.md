@@ -1,17 +1,47 @@
 # Lioran—Tokyo
 
-Local service: open an AI dialog, confirm the request, crawl a public product page, ask Hermes for **VideoSpec JSON only**, fill a **locked** HyperFrames `product-promo` template through official variables, and render a **silent 15-second 9:16 (1080×1920 @ 30fps) MP4**. A later “change one line” reuses the last VideoSpec (no recrawl) and re-renders a new 15s file; the old MP4 is kept.
+Local service: open an AI dialog, confirm the request, crawl a public product page, ask Hermes for **VideoSpec JSON only**, fill a **HyperFrames** template through official variables, and render a **silent 9:16 (1080×1920 @ 30fps) MP4**. A later “change one line” reuses the last VideoSpec (no recrawl) and re-renders; the old MP4 is kept.
 
 Pinned renderer: **`hyperframes@0.9.32`** (do not bump).
 
-UI standard: **`AESTHETICS.md`** (2026-11-11 governor reconfirmation) — P5 chat window follows [jakobhoeg/nextjs-ollama-llm-ui](https://github.com/jakobhoeg/nextjs-ollama-llm-ui) parts in `ui/chat-window/` (sidebar, top bar, message list, bubbles, bottom input, dark default). Wordmark **Lioran—Tokyo**. Film fill stays on official HyperFrames `templates/product-promo/` via `--variables-file` / `--strict-variables` and pinned `hyperframes@0.9.32` — do not use hyperkuy or any non-official-variable template; do not wait for a later template pick.
+UI standard: **`AESTHETICS.md`** (2026-11-11) — P5 chat window follows [jakobhoeg/nextjs-ollama-llm-ui](https://github.com/jakobhoeg/nextjs-ollama-llm-ui) parts in `ui/chat-window/`. Wordmark **Lioran—Tokyo**. Chrome, prompts, and buttons are **Chinese/English bilingual** (language switch; default Chinese first). On-video text still follows the product-page language. Film fill stays on official HyperFrames variables via `--variables-file` / `--strict-variables`.
+
+## Templates (five selectable)
+
+| `templateId` | Role | Duration |
+| --- | --- | --- |
+| `product-promo` | **Default** official fill-in template (untouched) | 15s |
+| `cinematic-product` | Optional four-act cinematic product reveal | 18s (4+5+5+4) |
+| `kinetic-typo` | Optional kinetic typography | ~15.15s (original GSAP chain) |
+| `brand-story` | Optional elegant brand narrative | 26s (original GSAP chain) |
+| `social-ad` | Optional flash-sale / social ad | 15s |
+
+Community four are converted fillable copies of [2boysfromtown/hyperframes-motion](https://github.com/2boysfromtown/hyperframes-motion) @ `83cfdad9` (MIT, Copyright (c) 2026 2 Boys From Town). Unmodified originals live under `references/hyperframes-motion/`. They are **not** a Web UI frame.
+
+### How a user or the model chooses a template
+
+- In the P5 dialog, **name a template** (e.g. “用 cinematic-product”, “kinetic-typo”, “brand-story”, “social-ad”, or “product-promo”).
+- If unspecified, the model picks the most suitable of the five; **ordinary product-promo requests still default to `product-promo`**.
+- The choice is stored on the chat draft and on `VideoSpec.templateId`, then the same official CLI path fills and renders that template directory.
+
+Firmware examples (Hermes not required):
+
+```bash
+npm run render:fixture                 # product-promo → data/jobs/fixture/video.mp4
+npm run render:fixture:cinematic       # cinematic-product
+npm run render:fixture:kinetic         # kinetic-typo
+npm run render:fixture:brand           # brand-story
+npm run render:fixture:social          # social-ad
+```
+
+Do not commit the MP4s.
 
 ## Requirements
 
 - Node.js 20+
 - FFmpeg and ffprobe on `PATH`
 - Chrome / Chromium (used by HyperFrames and the Crawlee crawler)
-- Local Hermes / AlinGPT already deployed on this machine from [Jianheng71/Lioran](https://github.com/Jianheng71/Lioran) (one-time download that stays on the host). This repo **auto-connects** to `http://127.0.0.1:43127` (`hermes3:8b`) — do **not** vendor or re-download a model here. If Hermes is not running, `npm run render:fixture` and `GET /health` still work (`fixtureRenderRequiresHermes: false`).
+- Local Hermes / AlinGPT already deployed on this machine from [Jianheng71/Lioran](https://github.com/Jianheng71/Lioran) (one-time download that stays on the host). This repo **auto-connects** to `http://127.0.0.1:43127` (`hermes3:8b`) — do **not** vendor or re-download a model here. If Hermes is not running, `npm run render:fixture*` and `GET /health` still work (`fixtureRenderRequiresHermes: false`).
 
 ## Clone → install → env → doctor → dev
 
@@ -26,22 +56,6 @@ npm run dev
 ```
 
 Open **[http://127.0.0.1:8787](http://127.0.0.1:8787)**. The main UI is the AI dialog (not a competing URL form).
-
-Firmware render (no Hermes, no network product page):
-
-```bash
-npm run render:fixture
-```
-
-Writes `data/jobs/fixture/video.mp4` via:
-
-```bash
-npx hyperframes@0.9.32 render <job-local template copy> \
-  --output data/jobs/fixture/video.mp4 \
-  --fps 30 \
-  --variables-file data/jobs/fixture/variables.json \
-  --strict-variables
-```
 
 ## Compliance
 
@@ -69,27 +83,29 @@ src/jobs/              FIFO queue + state machine
 src/session/           last VideoSpec / facts under data/sessions/
 src/crawler/           Crawlee → ProductFacts (OG / JSON-LD / visible fields)
 src/llm/               Hermes client + prompts + Zod (JSON only)
-src/templater/         VideoSpec → variables.json + local assets
+src/templater/         VideoSpec → variables.json + local assets (per templateId)
+src/templates/catalog.ts  template ids, durations, selection helpers
 src/renderer/          official CLI; render lock 1 + browser lock 1
-templates/product-promo/   locked template (read-only at render time)
+templates/product-promo/      default official template (do not alter)
+templates/cinematic-product/  optional 18s four-act fillable copy
+templates/kinetic-typo/       optional kinetic typography fillable copy
+templates/brand-story/        optional brand narrative fillable copy
+templates/social-ad/          optional 15s social ad fillable copy
+references/hyperframes-motion/  unmodified MIT originals + LICENSE/NOTICE/SOURCE
 fixtures/              firmware VideoSpec + placeholder images
 public/                ollama-llm-ui–style chat window (static, served by Hono)
 ui/chat-window/        upstream chat parts + SOURCE.md (Jakob Hoeg Mørk, MIT)
 references/hyperkuy/   historical visual reference only (not a template source)
-AESTHETICS.md          P5 UI + film template governor lock (authoritative)
-scripts/               doctor + render:fixture
+AESTHETICS.md          P5 UI + five-template governor lock (authoritative)
+scripts/               doctor + render:fixture*
 data/                  jobs, sessions, downloads, videos (gitignored)
 ```
-
-## Locked motion
-
-Do not change `data-duration` or segment starts: **0–1.125 / 1.125–10.5 / 10.5–15**. Intro/outro prefer logo + brand name, else main image + brand name. Audio MVP is silent. Keep Noto Sans SC for on-screen CJK.
 
 ## Fill path (official only)
 
 1. Template declares `data-composition-variables`; nodes use `data-var-text` / `data-var-src` / `var(--id)` / `getVariables()`.
 2. Server writes `variables.json` only (no Handlebars/EJS; Hermes never emits HTML).
-3. Render with `--variables-file` and `--strict-variables`.
+3. Render with `--variables-file` and `--strict-variables` against a job-local copy of the chosen template.
 
 ## Environment
 

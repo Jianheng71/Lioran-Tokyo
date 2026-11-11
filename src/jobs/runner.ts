@@ -56,12 +56,15 @@ export async function runJob(job: JobRecord): Promise<void> {
 
     setJobStatus(job.jobId, "generating");
     let videoSpec;
+    const preferredTemplateId =
+      job.templateId || session.chat.draft.templateId || session.lastVideoSpec?.templateId || null;
     if (job.kind === "url") {
       if (!facts) throw new Error("Facts missing after crawl");
-      const generated = await generateVideoSpecFromFacts(facts);
+      const generated = await generateVideoSpecFromFacts(facts, preferredTemplateId);
       videoSpec = generated.spec;
+      if (preferredTemplateId) videoSpec.templateId = preferredTemplateId;
       setJobStatus(job.jobId, "generating", {
-        stageDetail: `spec source=${generated.source}`,
+        stageDetail: `spec source=${generated.source}; template=${videoSpec.templateId}`,
         videoSpec,
       });
     } else {
@@ -72,8 +75,9 @@ export async function runJob(job: JobRecord): Promise<void> {
         facts,
       );
       videoSpec = generated.spec;
+      if (preferredTemplateId) videoSpec.templateId = preferredTemplateId;
       setJobStatus(job.jobId, "generating", {
-        stageDetail: `spec source=${generated.source}`,
+        stageDetail: `spec source=${generated.source}; template=${videoSpec.templateId}`,
         videoSpec,
       });
     }

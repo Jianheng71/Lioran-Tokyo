@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"welcome","type":"string","label":"Welcome prefix","default":""},{"id":"brand","type":"string","label":"Brand name","default":"Brand"},{"id":"tagline","type":"string","label":"Scene 1 tagline","default":""},{"id":"story","type":"string","label":"Story paragraph","default":""},{"id":"valueLine1","type":"string","label":"Value line 1","default":""},{"id":"valueHighlight1","type":"string","label":"Value highlight 1","default":""},{"id":"valueLine2","type":"string","label":"Value line 2","default":""},{"id":"valueHighlight2","type":"string","label":"Value highlight 2","default":""},{"id":"ctaPrefix","type":"string","label":"CTA prefix","default":""},{"id":"journey","type":"string","label":"Journey word","default":""},{"id":"cta","type":"string","label":"CTA button","default":"Learn more"},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#e94560"}]'>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <title>Brand Story</title>
+  <script src="assets/gsap.min.js"></script>
+  <link rel="stylesheet" href="assets/motion-effects.css" />
+  <style>
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/inter-latin-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/inter-latin-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/inter-latin-600.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:block;src:url("assets/fonts/inter-latin-800.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:400;font-display:block;src:url("assets/fonts/noto-sans-sc-400.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:500;font-display:block;src:url("assets/fonts/noto-sans-sc-500.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:600;font-display:block;src:url("assets/fonts/noto-sans-sc-600.woff2") format("woff2")}
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:700;font-display:block;src:url("assets/fonts/noto-sans-sc-700.woff2") format("woff2")}
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--background,#0a0a0a);color:#fff;font-family:"Noto Sans SC","Inter",sans-serif}
+    #root{position:relative;width:1080px;height:1920px;overflow:hidden}
+    .scene{position:absolute;inset:0;width:1080px;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;visibility:hidden;padding:64px}
+    .bg-gradient-1{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)}
+    .bg-gradient-2{background:linear-gradient(135deg,#0f3460 0%,#533483 50%,#e94560 100%)}
+    .bg-gradient-3{background:linear-gradient(135deg,#1a1a2e 0%,#0a0a0a 100%)}
+    .noise-overlay{position:absolute;inset:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");pointer-events:none}
+    .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.5) 100%);pointer-events:none}
+    .elegant-title{font-size:56px;font-weight:300;letter-spacing:10px;text-transform:uppercase;text-align:center}
+    .elegant-title .brand-span{font-weight:700;display:block;font-size:80px;letter-spacing:16px;margin-top:10px}
+    .story-text{font-size:28px;font-weight:300;line-height:1.6;max-width:860px;text-align:center;color:rgba(255,255,255,.9)}
+    .divider{width:100px;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);margin:40px auto}
+    .floating-element{position:absolute;font-size:160px;opacity:.1;filter:blur(2px)}
+    .value-prop{font-size:40px;font-weight:200;letter-spacing:6px;text-align:center}
+    .value-prop .highlight{font-weight:700;color:var(--accent,#e94560)}
+    .cta-elegant{padding:20px 60px;border:2px solid rgba(255,255,255,.3);font-size:18px;letter-spacing:4px;text-transform:uppercase;background:transparent;color:white;margin-top:50px;font-family:inherit}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="26" data-fps="30" data-width="1080" data-height="1920">
+    <div class="noise-overlay" data-no-timeline></div>
+    <div class="vignette" data-no-timeline></div>
+    <div class="scene bg-gradient-1" id="scene1" data-start="0" data-duration="5" data-track-index="1" data-no-timeline>
+      <h1 class="elegant-title" id="welcomeTitle"><span id="welcomePrefix" data-var-text="welcome"></span><span class="brand-span" id="brandName" data-var-text="brand">Brand</span></h1>
+      <div class="divider" id="divider1"></div>
+      <p class="story-text" id="scene1Tagline" data-var-text="tagline"></p>
+    </div>
+    <div class="scene bg-gradient-2" id="scene2" data-start="5" data-duration="11.3" data-track-index="1" data-no-timeline>
+      <div class="floating-element" style="top:10%;left:10%">✦</div>
+      <div class="floating-element" style="bottom:10%;right:10%">✦</div>
+      <p class="story-text" id="storyParagraph" data-var-text="story"></p>
+    </div>
+    <div class="scene bg-gradient-3" id="scene3" data-start="16.3" data-duration="4.7" data-track-index="1" data-no-timeline>
+      <p class="value-prop" id="valueProp1"><span id="valueLine1" data-var-text="valueLine1"></span><br /><span class="highlight" id="valueHighlight1" data-var-text="valueHighlight1"></span></p>
+      <div class="divider" id="divider3"></div>
+      <p class="value-prop" id="valueProp2" style="font-size:32px"><span id="valueLine2" data-var-text="valueLine2"></span> <span class="highlight" id="valueHighlight2" data-var-text="valueHighlight2"></span></p>
+    </div>
+    <div class="scene bg-gradient-1" id="scene4" data-start="21" data-duration="5" data-track-index="1" data-no-timeline>
+      <h2 class="elegant-title" id="ctaTitle" style="font-size:40px"><span id="ctaPrefix" data-var-text="ctaPrefix"></span><span class="brand-span" id="journey" data-var-text="journey" style="font-size:56px"></span></h2>
+      <button class="cta-elegant" id="cta" data-var-text="cta">Learn more</button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const vars = window.__hyperframes ? window.__hyperframes.getVariables() : {};
+      if (vars.locale) document.documentElement.lang = String(vars.locale);
+      if (vars.brand) document.title = String(vars.brand);
+
+      const tl = gsap.timeline({ paused: true });
+      // Scene 1: 0–5
+      tl.set('#scene1', { opacity: 1, visibility: 'visible' }, 0)
+        .from('#welcomeTitle', { y: 50, opacity: 0, duration: 1.5, ease: 'power3.out' }, 0)
+        .from('#divider1', { scaleX: 0, duration: 1, ease: 'power2.inOut' }, 1.0)
+        .from('#scene1Tagline', { y: 30, opacity: 0, duration: 1, ease: 'power3.out' }, 1.5)
+        .to('#scene1', { opacity: 0, duration: 1.5, ease: 'power2.in' }, 3.5)
+        .set('#scene1', { visibility: 'hidden' }, 5);
+
+      // Scene 2: 5–16.3
+      tl.set('#scene2', { opacity: 1, visibility: 'visible' }, 5)
+        .from('#storyParagraph', { y: 100, opacity: 0, duration: 1.5, ease: 'power3.out' }, 5)
+        .from('#scene2 .floating-element', { y: -50, opacity: 0, rotation: 20, duration: 2, stagger: 0.3, ease: 'power2.out' }, 5.5)
+        .to('#scene2 .floating-element', { y: -30, duration: 3, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 8.3)
+        .to('#scene2', { opacity: 0, duration: 1.5, ease: 'power2.in' }, 14.8)
+        .set('#scene2', { visibility: 'hidden' }, 16.3);
+
+      // Scene 3: 16.3–21
+      tl.set('#scene3', { opacity: 1, visibility: 'visible' }, 16.3)
+        .from(['#valueProp1','#valueProp2'], { clipPath: 'inset(0 100% 0 0)', duration: 1.2, ease: 'power3.inOut' }, 16.3)
+        .from(['#valueHighlight1','#valueHighlight2'], { color: '#fff', duration: 1, ease: 'power2.out' }, 17.0)
+        .from('#divider3', { scaleX: 0, duration: 0.8, ease: 'power2.inOut' }, 17.7)
+        .to('#scene3', { opacity: 0, duration: 1.5, ease: 'power2.in' }, 19.5)
+        .set('#scene3', { visibility: 'hidden' }, 21);
+
+      // Scene 4: 21–26
+      tl.set('#scene4', { opacity: 1, visibility: 'visible' }, 21)
+        .from('#ctaTitle', { y: 80, opacity: 0, letterSpacing: '50px', duration: 1.5, ease: 'power3.out' }, 21)
+        .from('#cta', { y: 50, opacity: 0, duration: 1, ease: 'power3.out' }, 22)
+        .to('#cta', { boxShadow: '0 0 40px rgba(255,255,255,0.3)', duration: 1.2, ease: 'sine.inOut', yoyo: true, repeat: 2 }, 23.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['main'] = tl;
+    })();
+  </script>
+</body>
+</html>
