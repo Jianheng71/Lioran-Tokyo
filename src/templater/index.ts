@@ -207,17 +207,26 @@ export function fillTemplate(opts: {
   const variablesPath = path.join(opts.jobDir, "variables.json");
   copyTemplate(projectDir, templateId);
 
-  const markPath = opts.assets.logo || opts.assets.productImage;
-  if (!markPath || !fs.existsSync(markPath)) {
-    throw new Error("fillTemplate requires a local logo or product image");
+  // brandMark: genuine brand mark first (crawler already rejects favicon /
+  // sprite / site UI / tiny thumbs), else product hero. Opening/closing still
+  // logo-first-else-hero; this only clarifies the fill rule.
+  const productPath =
+    opts.assets.productImage && fs.existsSync(opts.assets.productImage)
+      ? opts.assets.productImage
+      : null;
+  const logoPath =
+    opts.assets.logo && fs.existsSync(opts.assets.logo) ? opts.assets.logo : null;
+  const markPath = logoPath || productPath;
+  if (!markPath) {
+    throw new Error("fillTemplate requires a local product hero image");
   }
-  const destName = opts.assets.logo
-    ? `logo${extOf(opts.assets.logo)}`
-    : `product${extOf(opts.assets.productImage!)}`;
+  const destName = logoPath
+    ? `logo${extOf(logoPath)}`
+    : `product${extOf(markPath)}`;
   const brandMark = stageMark(projectDir, markPath, destName);
 
-  if (opts.assets.productImage && fs.existsSync(opts.assets.productImage)) {
-    stageMark(projectDir, opts.assets.productImage, `product${extOf(opts.assets.productImage)}`);
+  if (productPath && path.resolve(productPath) !== path.resolve(markPath)) {
+    stageMark(projectDir, productPath, `product${extOf(productPath)}`);
   }
 
   const variables = variablesForTemplate(templateId, opts.spec, brandMark);

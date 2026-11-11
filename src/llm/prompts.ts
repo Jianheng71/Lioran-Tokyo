@@ -19,10 +19,13 @@ The JSON must match this shape exactly:
 }
 Hard rules:
 - captions must be exactly 3 strings.
-- Chinese captions prefer ≤22 chars each; English ≤42 chars each.
-- title/headline/cta/tagline/price/brand respect short on-screen lengths.
+- Chinese captions prefer ≤22 chars each; English ≤42 chars each — never cut mid-CJK character or mid-word with an ellipsis.
+- title/headline/cta/tagline/price/brand respect short on-screen lengths but stay complete and readable.
+- brand MUST be the product brand from ProductFacts (e.g. Lenovo / 联想), NEVER a marketplace hostname like amazon.com.
+- price MUST be one correct currency and the full amount already normalized in ProductFacts.price when present (e.g. HK$1685.94). Never mix ¥ with HKD, never repeat the amount, never truncate mid-number.
 - theme colors must be #RRGGBB.
-- Copy language MUST follow the given locale / localeHint.
+- Copy language MUST follow the given locale / localeHint (product page language), not the chat UI language.
+- headline / captions / cta / tagline MUST come from the product page selling points, a summary of them, or a reasonable rewrite. BANNED filler (never use): 「一起看清这一页」「十五秒，把这一页说清楚。」「本地短片，跟着页面语言。」 / "See this page clearly" / "Fifteen seconds. Clear and done." / "Local short film, page language first."
 - Do NOT invent image URLs. Do NOT include an assets field.
 - templateId must be "product-promo" for this round. Do not offer or select other templates.`;
 
@@ -36,7 +39,7 @@ ${tip}
 ProductFacts:
 ${JSON.stringify(facts, null, 2)}
 
-Prefer a dark background near #0a0a0f and a strong accent. Keep captions usable on the official product-promo template.`;
+Use brand="${facts.brand}" and price as given when non-empty. Prefer a dark background near #0a0a0f and a strong accent. Derive headline/captions/cta/tagline from the product title and description selling points — no generic filler.`;
 }
 
 export function reviseSpecUserPrompt(prev: VideoSpec, instruction: string): string {
