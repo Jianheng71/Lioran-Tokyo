@@ -19,8 +19,7 @@ The JSON must match this shape exactly:
 }
 Hard rules:
 - captions must be exactly 3 strings.
-- Chinese captions prefer ≤22 chars each; English ≤42 chars each — never cut mid-CJK character or mid-word with an ellipsis.
-- title/headline/cta/tagline/price/brand respect short on-screen lengths but stay complete and readable.
+- Stay within official slot maxima (title/headline ≤48, captions ≤42, brand ≤40). Prefer complete readable phrases — never hard-cut Chinese at ~22 into incomplete text, never cut mid-word / mid-CJK, and do not use an ellipsis that makes the product name unrecognizable. On-screen wrapping handles overflow.
 - brand MUST be the product brand from ProductFacts (e.g. Lenovo / 联想), NEVER a marketplace hostname like amazon.com.
 - price MUST be one correct currency and the full amount already normalized in ProductFacts.price when present (e.g. HK$1685.94). Never mix ¥ with HKD, never repeat the amount, never truncate mid-number.
 - theme colors must be #RRGGBB.

@@ -1,27 +1,30 @@
 import type { ProductFacts, VideoSpec } from "../schemas.js";
 import { formatDisplayPrice } from "../crawler/priceBrand.js";
 
-/** Clip without mid-grapheme cuts; prefer boundary breaks over ellipsis mid-word. */
-function clipReadable(text: string, max: number): string {
+/**
+ * Fit text into an official short slot without mid-word / mid-CJK cuts and
+ * without an ellipsis that makes the product name unrecognizable.
+ * Prefer a natural boundary; if none, keep a complete prefix up to max.
+ */
+export function clipReadable(text: string, max: number): string {
   const t = text.replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   const slice = t.slice(0, max);
-  // Prefer break at space / CJK punctuation near the end
   const breakAt = Math.max(
     slice.lastIndexOf(" "),
     slice.lastIndexOf("·"),
     slice.lastIndexOf("，"),
     slice.lastIndexOf("。"),
     slice.lastIndexOf("、"),
+    slice.lastIndexOf("："),
+    slice.lastIndexOf(":"),
     slice.lastIndexOf("-"),
+    slice.lastIndexOf("/"),
   );
-  if (breakAt >= Math.floor(max * 0.55)) {
+  if (breakAt >= Math.floor(max * 0.45)) {
     return slice.slice(0, breakAt).trim();
   }
-  // CJK-heavy: cut at max without ellipsis mid-character (code units ≈ chars here)
-  if (/[\u4e00-\u9fff]/.test(slice.slice(-4))) {
-    return slice.trim();
-  }
+  // No ellipsis — keep a complete readable prefix inside the official max.
   return slice.trim();
 }
 
@@ -48,6 +51,8 @@ export function videoSpecFromFacts(
   templateId: VideoSpec["templateId"] = "product-promo",
 ): VideoSpec {
   const zh = facts.localeHint.toLowerCase().startsWith("zh");
+  // Use official slot maxima (title 48 / captions 42). Do not hard-clip Chinese
+  // at ~22 into incomplete text — CSS wraps / tightens type on screen.
   const brand = clipReadable(facts.brand || "Brand", 40);
   const title = clipReadable(facts.title, 48);
   const priceText = formatDisplayPrice(facts.price, facts.currency, facts.localeHint);
@@ -63,16 +68,16 @@ export function videoSpecFromFacts(
 
   const headline = clipReadable(p0, 48);
   const captions: [string, string, string] = [
-    clipReadable(title, zh ? 22 : 42),
-    clipReadable(p1, zh ? 22 : 42),
-    clipReadable(priceText ? `${priceText}` : p2, zh ? 22 : 42),
+    clipReadable(title, 42),
+    clipReadable(p1, 42),
+    clipReadable(priceText ? `${priceText}` : p2, 42),
   ];
   // Ensure captions are product-derived, never the banned generic fillers
   const banned =
     /一起看清这一页|十五秒，把这一页说清楚|本地短片，跟着页面语言|See this page clearly|Fifteen seconds\. Clear and done|Local short film, page language first/i;
   for (let i = 0; i < 3; i++) {
     if (!captions[i] || banned.test(captions[i])) {
-      captions[i] = clipReadable([title, brand, p0, p1, p2][i] || title, zh ? 22 : 42);
+      captions[i] = clipReadable([title, brand, p0, p1, p2][i] || title, 42);
     }
   }
 

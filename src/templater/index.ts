@@ -207,9 +207,10 @@ export function fillTemplate(opts: {
   const variablesPath = path.join(opts.jobDir, "variables.json");
   copyTemplate(projectDir, templateId);
 
-  // brandMark: genuine brand mark first (crawler already rejects favicon /
-  // sprite / site UI / tiny thumbs), else product hero. Opening/closing still
-  // logo-first-else-hero; this only clarifies the fill rule.
+  // Opening/closing brandMark: genuine logo first, else product hero.
+  // Mid section uses a separate staged assets/product.png (not brandMark), so a
+  // real brand mark never replaces the mid hero. Official variable channels
+  // stay unchanged — mid hero is a fixed asset path, not a new data-var slot.
   const productPath =
     opts.assets.productImage && fs.existsSync(opts.assets.productImage)
       ? opts.assets.productImage
@@ -222,12 +223,13 @@ export function fillTemplate(opts: {
   }
   const destName = logoPath
     ? `logo${extOf(logoPath)}`
-    : `product${extOf(markPath)}`;
+    : `product-mark${extOf(markPath)}`;
   const brandMark = stageMark(projectDir, markPath, destName);
 
-  if (productPath && path.resolve(productPath) !== path.resolve(markPath)) {
-    stageMark(projectDir, productPath, `product${extOf(productPath)}`);
-  }
+  // Always overwrite the mid-section product hero file. Prefer crawled hero;
+  // fall back to mark only when no separate product image exists.
+  const midHeroPath = productPath || markPath;
+  stageMark(projectDir, midHeroPath, "product.png");
 
   const variables = variablesForTemplate(templateId, opts.spec, brandMark);
   fs.writeFileSync(variablesPath, `${JSON.stringify(variables, null, 2)}\n`);
