@@ -684,11 +684,13 @@
           9.1,
         );
 
-        // Reformat UI as card is dragged in
-        tl.to(".hero-section", { y: -150, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".hero-heading", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".subtitle-lines", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".cta-button", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        // Old card-drag "reformat" shifted/shrunk the stage into a demo zoom.
+        // Keep the same selectors + timing, but hold a stable product showcase
+        // (no translate-up / scale-down) so the mid hero stays recognizable.
+        tl.to(".hero-section", { y: 0, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".hero-heading", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".subtitle-lines", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".cta-button", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
 
         // Stamping into Grid/Row
         tl.to(".stamped-cards", { y: 200, duration: 0.1 }, 9.1); // Position the container

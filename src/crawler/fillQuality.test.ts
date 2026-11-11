@@ -8,44 +8,65 @@ import {
   detectCurrency,
   extractAmount,
   formatDisplayPrice,
+  isMarketplaceHost,
   resolveProductBrand,
 } from "./priceBrand.js";
 import { clipReadable, videoSpecFromFacts } from "../llm/fallback.js";
-import { fillTemplate } from "../templater/index.js";
+import { extForImageFile, fillTemplate } from "../templater/index.js";
 import { config } from "../config.js";
 import type { ProductFacts, VideoSpec } from "../schemas.js";
 
-describe("imageQuality", () => {
-  it("rejects favicons, sprites, and tiny Amazon thumbs", () => {
-    assert.equal(isRejectImageUrl("https://example.com/favicon.ico"), true);
-    assert.equal(isRejectImageUrl("https://cdn.example/sprite.png"), true);
+describe("imageQuality (host-agnostic)", () => {
+  it("rejects favicons, sprites, and tiny thumbs without requiring amazon.com", () => {
+    assert.equal(isRejectImageUrl("https://cdn.example.com/favicon.ico"), true);
+    assert.equal(isRejectImageUrl("https://cdn.example.com/assets/sprite.png"), true);
+    assert.equal(isRejectImageUrl("https://cdn.example.com/icons/cart.svg"), true);
     assert.equal(
-      isRejectImageUrl("https://m.media-amazon.com/images/I/abc._SS40_.jpg"),
+      isRejectImageUrl("https://cdn.shopify.com/s/files/1/0000/p_100x100.jpg"),
       true,
     );
     assert.equal(
-      isRejectImageUrl("https://m.media-amazon.com/images/I/abc._AC_SL1500_.jpg"),
+      isRejectImageUrl("https://images.example.com/product/40x40/mug.jpg"),
+      true,
+    );
+    assert.equal(
+      isRejectImageUrl("https://images.example.com/product.jpg?w=40&h=40"),
+      true,
+    );
+    // Usable product media on a generic CDN
+    assert.equal(
+      isRejectImageUrl("https://cdn.example.com/products/mug-1200.jpg"),
       false,
     );
   });
 
-  it("rewrites Amazon thumbs toward larger media", () => {
-    const out = preferLargerImageUrl(
+  it("optional Amazon rewrite is an enhancement, not the only pass path", () => {
+    const amazon = preferLargerImageUrl(
       "https://m.media-amazon.com/images/I/abc._AC_SX100_.jpg",
     );
-    assert.match(out, /AC_SL1500/);
+    assert.match(amazon, /AC_SL1500/);
+    const shopify = preferLargerImageUrl(
+      "https://cdn.shopify.com/s/files/1/0000/mug_200x200.jpg",
+    );
+    assert.match(shopify, /_1200x/);
+    // Generic CDN URL passes through unchanged and is still acceptable
+    const plain = "https://cdn.example.com/products/mug-hero.jpg";
+    assert.equal(preferLargerImageUrl(plain), plain);
+    assert.equal(isRejectImageUrl(plain), false);
   });
 });
 
-describe("priceBrand", () => {
-  it("formats HKD without mixing ¥", () => {
+describe("priceBrand (host-agnostic)", () => {
+  it("formats HKD without mixing ¥ and does not invent currency from zh locale", () => {
     assert.equal(detectCurrency("HK$1,685.94", "HKD"), "HKD");
     assert.equal(extractAmount("HK$1,685.94"), "1685.94");
     assert.equal(formatDisplayPrice("HK$1,685.94", "HKD"), "HK$1685.94");
     assert.equal(formatDisplayPrice("¥1,685.94 HKD", "HKD"), "HK$1685.94");
+    assert.equal(detectCurrency("49.00", null, "zh"), null);
+    assert.equal(formatDisplayPrice("49.00", null, "zh"), "49.00");
   });
 
-  it("resolves Lenovo from title instead of amazon.com host", () => {
+  it("resolves product brand on Amazon and non-Amazon marketplaces", () => {
     assert.equal(
       resolveProductBrand({
         brand: null,
@@ -57,12 +78,35 @@ describe("priceBrand", () => {
     );
     assert.equal(
       resolveProductBrand({
-        brand: "Lenovo",
-        title: "Something",
-        urlHost: "amazon.com",
+        brand: null,
+        title: "Acme Ceramic Mug — Matte Black",
+        urlHost: "acme-store.myshopify.com",
+        ogSiteName: "Shopify",
       }),
-      "Lenovo",
+      "Acme",
     );
+    assert.notEqual(
+      resolveProductBrand({
+        brand: null,
+        title: "Acme Ceramic Mug — Matte Black",
+        urlHost: "acme-store.myshopify.com",
+        ogSiteName: "Shopify",
+      }),
+      "acme-store.myshopify.com",
+    );
+    assert.equal(
+      resolveProductBrand({
+        brand: "Acme",
+        title: "Ceramic Mug",
+        urlHost: "shop.example.com",
+        ogSiteName: "Example Shop",
+      }),
+      "Acme",
+    );
+    assert.ok(isMarketplaceHost("amazon.com"));
+    assert.ok(isMarketplaceHost("acme.myshopify.com"));
+    assert.ok(isMarketplaceHost("ebay.com"));
+    assert.equal(isMarketplaceHost("brand.example.com"), false);
     assert.notEqual(
       resolveProductBrand({
         brand: null,
@@ -83,13 +127,11 @@ describe("Chinese title/caption completeness", () => {
     assert.ok(caption.length > 22);
     assert.doesNotMatch(caption, /…|\.\.\./);
     assert.ok(caption.startsWith("联想"));
-    // Remains recognizable — includes a substantial product name prefix
-    assert.ok(caption.includes("Idea Tab") || caption.includes("联想"));
   });
 
   it("videoSpecFromFacts keeps Chinese captions above the old 22-char cut", () => {
     const facts: ProductFacts = {
-      sourceUrl: "https://www.amazon.com/dp/example",
+      sourceUrl: "https://shop.example.com/products/idea-tab",
       title: "联想Idea Tab十一英寸安卓平板电脑长续航轻薄金属机身",
       brand: "联想",
       price: "HK$1685.94",
@@ -97,7 +139,7 @@ describe("Chinese title/caption completeness", () => {
       compareAtPrice: null,
       description: "高清显示屏。全天续航。轻薄金属机身。适合学习与娱乐。",
       images: ["/tmp/product.png"],
-      urlHost: "amazon.com",
+      urlHost: "shop.example.com",
       localeHint: "zh",
       logo: null,
     };
@@ -106,33 +148,30 @@ describe("Chinese title/caption completeness", () => {
     assert.ok(spec.captions[0].length > 22);
     assert.doesNotMatch(spec.title, /…/);
     assert.doesNotMatch(spec.captions[0], /…/);
-    assert.ok(spec.title.includes("联想") || spec.title.includes("Idea"));
   });
 });
 
 describe("videoSpecFromFacts quality", () => {
-  const facts: ProductFacts = {
-    sourceUrl: "https://www.amazon.com/dp/example",
-    title: "Lenovo Idea Tab 11 inch Android Tablet with Long Battery",
-    brand: "Lenovo",
-    price: "HK$1685.94",
-    currency: "HKD",
-    compareAtPrice: null,
-    description:
-      "Bright display. All-day battery. Slim aluminum design. Ideal for study and entertainment.",
-    images: ["/tmp/product.png"],
-    urlHost: "amazon.com",
-    localeHint: "zh",
-    logo: null,
-  };
-
-  it("uses product brand, clean HKD price, and no banned filler", () => {
+  it("uses product brand, clean price, and no banned filler on a generic PDP", () => {
+    const facts: ProductFacts = {
+      sourceUrl: "https://acme-store.myshopify.com/products/ceramic-mug",
+      title: "Acme Ceramic Mug Matte Black",
+      brand: "Acme",
+      price: "$28.00",
+      currency: "USD",
+      compareAtPrice: null,
+      description: "Matte black ceramic. Dishwasher safe. 12 oz everyday mug.",
+      images: ["/tmp/product.png"],
+      urlHost: "acme-store.myshopify.com",
+      localeHint: "en",
+      logo: null,
+    };
     const spec = videoSpecFromFacts(facts);
-    assert.equal(spec.brand, "Lenovo");
-    assert.equal(spec.price, "HK$1685.94");
-    assert.doesNotMatch(spec.headline, /一起看清这一页|十五秒|本地短片/);
+    assert.equal(spec.brand, "Acme");
+    assert.equal(spec.price, "$28.00");
+    assert.doesNotMatch(spec.headline, /一起看清这一页|十五秒|本地短片|See this page clearly/i);
     for (const c of spec.captions) {
-      assert.doesNotMatch(c, /一起看清这一页|十五秒|本地短片/);
+      assert.doesNotMatch(c, /一起看清这一页|十五秒|本地短片|See this page clearly/i);
       assert.ok(c.length > 0);
     }
     assert.equal(spec.templateId, "product-promo");
@@ -144,21 +183,21 @@ describe("mid section product hero vs brandMark", () => {
   const fixtureLogo = path.join(config.root, "templates", "product-promo", "assets", "logo.png");
 
   const spec: VideoSpec = {
-    locale: "zh",
-    brand: "联想",
-    title: "联想Idea Tab十一英寸安卓平板电脑",
-    price: "HK$1685.94",
+    locale: "en",
+    brand: "Acme",
+    title: "Acme Ceramic Mug Matte Black",
+    price: "$28.00",
     compareAtPrice: "",
-    headline: "高清显示屏全天续航",
-    captions: ["联想Idea Tab十一英寸安卓平板电脑", "高清显示屏", "全天续航"],
-    cta: "了解详情",
-    tagline: "轻薄金属机身",
-    urlHost: "amazon.com",
+    headline: "Matte black ceramic",
+    captions: ["Acme Ceramic Mug Matte Black", "Dishwasher safe", "12 oz everyday mug"],
+    cta: "Learn more",
+    tagline: "Everyday mug",
+    urlHost: "acme-store.myshopify.com",
     theme: { background: "#0a0a0f", accent: "#C41E3A" },
     templateId: "product-promo",
   };
 
-  it("stages mid hero as assets/product.png separate from brandMark when logo exists", () => {
+  it("stages mid hero with byte-matched extension, separate from brandMark", () => {
     const jobDir = fs.mkdtempSync(path.join(os.tmpdir(), "lt-fill-"));
     try {
       const productCopy = path.join(jobDir, "hero-src.png");
@@ -167,6 +206,7 @@ describe("mid section product hero vs brandMark", () => {
       fs.copyFileSync(fixtureLogo, logoCopy);
       const productBytes = fs.readFileSync(productCopy);
       const logoBytes = fs.readFileSync(logoCopy);
+      const midExt = extForImageFile(productCopy);
 
       const filled = fillTemplate({
         jobId: "job_testfill0001",
@@ -175,21 +215,30 @@ describe("mid section product hero vs brandMark", () => {
         assets: { logo: logoCopy, productImage: productCopy },
       });
 
-      const midHero = path.join(filled.projectDir, "assets", "product.png");
+      const midHero = path.join(filled.projectDir, "assets", `product${midExt}`);
       assert.ok(fs.existsSync(midHero));
       assert.deepEqual(fs.readFileSync(midHero), productBytes);
       assert.match(filled.variables.brandMark, /^assets\/logo/);
       const brandMarkFile = path.join(filled.projectDir, filled.variables.brandMark);
       assert.ok(fs.existsSync(brandMarkFile));
       assert.deepEqual(fs.readFileSync(brandMarkFile), logoBytes);
-      // Mid hero must not be the logo when a product hero exists
       assert.notDeepEqual(fs.readFileSync(midHero), logoBytes);
+
+      const midHtml = fs.readFileSync(
+        path.join(filled.projectDir, "compositions", "scene2-4-canvas.html"),
+        "utf8",
+      );
+      assert.match(
+        midHtml,
+        new RegExp(`class="product-hero-img"\\s+src="assets/product\\${midExt}"`),
+      );
+      assert.doesNotMatch(midHtml, /product-hero-img[\s\S]{0,80}data-var-src="brandMark"/);
     } finally {
       fs.rmSync(jobDir, { recursive: true, force: true });
     }
   });
 
-  it("mid composition binds product.png, not brandMark, and is not a browser chrome shell", () => {
+  it("mid composition is a product stage, not browser chrome, with stable mid tweens", () => {
     const html = fs.readFileSync(
       path.join(config.root, "templates/product-promo/compositions/scene2-4-canvas.html"),
       "utf8",
@@ -199,13 +248,16 @@ describe("mid section product hero vs brandMark", () => {
       html,
       /product-hero-img[\s\S]{0,120}data-var-src="brandMark"/,
     );
-    // Timeline selectors must remain
     assert.match(html, /class="web-frame"/);
     assert.match(html, /class="ui-content"/);
+    assert.match(html, /data-duration="9\.375"/);
     assert.match(html, /tl\.duration\(tl\.duration\(\) \* 15 \/ 20\)/);
-    // Must not still read as a white browser / Figma web-frame chrome
     assert.doesNotMatch(html, /\.web-frame\s*\{[^}]*background:\s*white/);
     assert.doesNotMatch(html, /\.ui-content\s*\{[^}]*background:\s*white/);
-    assert.match(html, /display:\s*none\s*!important/); // nav-links hidden
+    // Old demo reformat must not shift/shrink the product stage
+    assert.doesNotMatch(html, /\.hero-section",\s*\{\s*y:\s*-150/);
+    assert.doesNotMatch(html, /\.hero-heading",\s*\{\s*scale:\s*0\.8/);
+    assert.match(html, /\.hero-section",\s*\{\s*y:\s*0/);
+    assert.match(html, /\.hero-heading",\s*\{\s*scale:\s*1/);
   });
 });

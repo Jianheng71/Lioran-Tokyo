@@ -3,10 +3,13 @@
 const CURRENCY_HINTS: Array<{ re: RegExp; code: string }> = [
   { re: /\bHKD\b|HK\$|港币|港幣/i, code: "HKD" },
   { re: /\bJPY\b|￥|日元|日圓/i, code: "JPY" },
-  { re: /\bCNY\b|\bRMB\b|元|人民币|人民幣/i, code: "CNY" },
-  { re: /\bUSD\b|US\$|\$/i, code: "USD" },
+  { re: /\bCNY\b|\bRMB\b|人民币|人民幣/i, code: "CNY" },
+  // Bare 元 alone is too ambiguous (and locale must not force ¥) — require CNY/RMB/人民币.
+  { re: /\bUSD\b|US\$/i, code: "USD" },
   { re: /\bEUR\b|€/i, code: "EUR" },
   { re: /\bGBP\b|£/i, code: "GBP" },
+  // Bare $ last — only when no more specific currency matched
+  { re: /\$/i, code: "USD" },
 ];
 
 export function detectCurrency(
@@ -20,7 +23,7 @@ export function detectCurrency(
   for (const h of CURRENCY_HINTS) {
     if (h.re.test(blob)) return h.code;
   }
-  // Do not invent CNY just because locale is zh — Amazon HK pages are often zh + HKD.
+  // Do not invent CNY/JPY just because locale is zh — e.g. zh + HKD pages.
   void localeHint;
   return null;
 }
@@ -71,12 +74,25 @@ export function formatDisplayPrice(
   }
 }
 
+/** Marketplace / storefront hosts — never treat these (or their site names) as the product brand. */
 const MARKETPLACE_HOST_RE =
-  /amazon\.|amzn\.|ebay\.|shopify\.|tmall\.|taobao\.|jd\.com|rakuten\.|aliexpress\./i;
+  /amazon\.|amzn\.|ebay\.|etsy\.|shopify\.|myshopify\.com|tmall\.|taobao\.|jd\.com|rakuten\.|aliexpress\.|walmart\.|target\.com|mercari\.|yahoo\.|coupang\.|shopee\.|lazada\.|bestbuy\.|newegg\./i;
+
+const MARKETPLACE_SITE_NAME_RE =
+  /^(amazon|ebay|etsy|shopify|tmall|taobao|rakuten|aliexpress|walmart|target|mercari|yahoo|coupang|shopee|lazada|bestbuy|newegg|京东|天猫|淘宝)([.\s]|$)/i;
+
+export function isMarketplaceHost(host: string): boolean {
+  const h = host.replace(/^www\./, "").trim();
+  return MARKETPLACE_HOST_RE.test(h);
+}
+
+function hostLabel(host: string): string {
+  return host.replace(/^www\./, "").split(".")[0]?.toLowerCase() || "";
+}
 
 /**
- * Prefer JSON-LD / explicit brand. Never use marketplace hostname as brand.
- * Fall back to leading brand token from the title when needed.
+ * Prefer JSON-LD / explicit brand. Never use a marketplace hostname (or site name)
+ * as brand — host-agnostic, not Amazon-only. Fall back to a leading title token.
  */
 export function resolveProductBrand(opts: {
   brand: string | null | undefined;
@@ -85,36 +101,41 @@ export function resolveProductBrand(opts: {
   ogSiteName?: string | null;
 }): string {
   const host = opts.urlHost.replace(/^www\./, "").trim();
+  const label = hostLabel(host);
   const candidates = [opts.brand, opts.ogSiteName]
     .map((s) => (s || "").trim())
     .filter(Boolean);
 
   for (const c of candidates) {
-    const lower = c.toLowerCase();
+    const lower = c.toLowerCase().trim();
+    if (!lower) continue;
     if (lower === host.toLowerCase()) continue;
-    // Marketplace site names / hosts are never the product brand
+    if (lower === label) continue;
+    if (MARKETPLACE_SITE_NAME_RE.test(lower)) continue;
+    if (MARKETPLACE_HOST_RE.test(c)) continue;
+    // Hostname-shaped strings are not product brands on marketplace PDPs
     if (
-      /^(amazon|ebay|shopify|tmall|taobao|rakuten|aliexpress)(\.[a-z.]+)?$/i.test(lower) ||
-      MARKETPLACE_HOST_RE.test(c)
+      /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(c) &&
+      (isMarketplaceHost(host) || lower.includes(label))
     ) {
-      continue;
-    }
-    if (/^(www\.)?[a-z0-9-]+\.[a-z]{2,}$/i.test(c) && MARKETPLACE_HOST_RE.test(host)) {
       continue;
     }
     return c.slice(0, 40);
   }
 
-  // Title often starts with brand: "Lenovo Idea Tab…" / "联想 Idea Tab…"
+  // Title often starts with brand: "Lenovo Idea Tab…" / "联想 Idea Tab…" / "Acme Ceramic Mug"
   const title = opts.title.trim();
   const m = title.match(/^([\u4e00-\u9fffA-Za-z][\u4e00-\u9fffA-Za-z0-9&.+\-]{1,24})\b/);
-  if (m && m[1].toLowerCase() !== host.toLowerCase()) {
-    return m[1].slice(0, 40);
+  if (m && m[1].toLowerCase() !== host.toLowerCase() && m[1].toLowerCase() !== label) {
+    if (!MARKETPLACE_SITE_NAME_RE.test(m[1])) {
+      return m[1].slice(0, 40);
+    }
   }
 
-  // Last resort for non-marketplace pages: host; for marketplaces keep a short title token
-  if (MARKETPLACE_HOST_RE.test(host)) {
+  // Last resort for marketplace pages: short title token — never the host
+  if (isMarketplaceHost(host)) {
     return (m?.[1] || title.slice(0, 24) || "Brand").slice(0, 40);
   }
-  return host.slice(0, 40) || "Brand";
+  // Brand's own site: host is acceptable only when nothing else is available
+  return (m?.[1] || host || "Brand").slice(0, 40);
 }

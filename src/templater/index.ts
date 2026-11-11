@@ -26,6 +26,44 @@ function extOf(file: string): string {
   return ext || ".png";
 }
 
+/** Prefer an extension that matches the image bytes (JPEG/PNG/WebP). */
+export function extForImageFile(filePath: string): string {
+  try {
+    const fd = fs.openSync(filePath, "r");
+    const buf = Buffer.alloc(16);
+    fs.readSync(fd, buf, 0, 16, 0);
+    fs.closeSync(fd);
+    if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+      return ".jpg";
+    }
+    if (buf.length >= 8 && buf.toString("ascii", 1, 4) === "PNG") return ".png";
+    if (
+      buf.length >= 12 &&
+      buf.toString("ascii", 0, 4) === "RIFF" &&
+      buf.toString("ascii", 8, 12) === "WEBP"
+    ) {
+      return ".webp";
+    }
+  } catch {
+    // fall through to path extension
+  }
+  const ext = extOf(filePath);
+  if (ext === ".jpeg") return ".jpg";
+  return ext;
+}
+
+/** Point the mid-section <img> at the staged product hero (no new data-var). */
+function patchMidHeroSrc(projectDir: string, relativeAsset: string): void {
+  const midHtml = path.join(projectDir, "compositions", "scene2-4-canvas.html");
+  if (!fs.existsSync(midHtml)) return;
+  const html = fs.readFileSync(midHtml, "utf8");
+  const next = html.replace(
+    /(class="product-hero-img"\s+src=")assets\/product\.[a-z0-9]+(")/i,
+    `$1${relativeAsset}$2`,
+  );
+  if (next !== html) fs.writeFileSync(midHtml, next);
+}
+
 function resolveTemplateId(spec: VideoSpec): TemplateId {
   const raw = spec.templateId;
   if (isTemplateId(raw)) return raw;
@@ -208,9 +246,9 @@ export function fillTemplate(opts: {
   copyTemplate(projectDir, templateId);
 
   // Opening/closing brandMark: genuine logo first, else product hero.
-  // Mid section uses a separate staged assets/product.png (not brandMark), so a
+  // Mid section uses a separate staged assets/product.<ext> (not brandMark), so a
   // real brand mark never replaces the mid hero. Official variable channels
-  // stay unchanged — mid hero is a fixed asset path, not a new data-var slot.
+  // stay unchanged — mid hero is a patched static asset path, not a new data-var.
   const productPath =
     opts.assets.productImage && fs.existsSync(opts.assets.productImage)
       ? opts.assets.productImage
@@ -222,14 +260,16 @@ export function fillTemplate(opts: {
     throw new Error("fillTemplate requires a local product hero image");
   }
   const destName = logoPath
-    ? `logo${extOf(logoPath)}`
-    : `product-mark${extOf(markPath)}`;
+    ? `logo${extForImageFile(logoPath)}`
+    : `product-mark${extForImageFile(markPath)}`;
   const brandMark = stageMark(projectDir, markPath, destName);
 
-  // Always overwrite the mid-section product hero file. Prefer crawled hero;
-  // fall back to mark only when no separate product image exists.
+  // Always overwrite the mid-section product hero. Prefer crawled hero; fall
+  // back to mark only when no separate product image exists. Extension matches bytes.
   const midHeroPath = productPath || markPath;
-  stageMark(projectDir, midHeroPath, "product.png");
+  const midDest = `product${extForImageFile(midHeroPath)}`;
+  const midRelative = stageMark(projectDir, midHeroPath, midDest);
+  patchMidHeroSrc(projectDir, midRelative);
 
   const variables = variablesForTemplate(templateId, opts.spec, brandMark);
   fs.writeFileSync(variablesPath, `${JSON.stringify(variables, null, 2)}\n`);

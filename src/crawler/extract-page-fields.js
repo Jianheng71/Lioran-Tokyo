@@ -17,11 +17,13 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
   const text = (sel) =>
     document.querySelector(sel)?.innerText?.trim() || null;
 
+  // Host-agnostic: reject favicons/sprites/site UI/tiny thumbs by URL signals.
+  // Amazon/Shopify size tokens are optional CDN patterns among several.
   const rejectUrl = (u) => {
     if (!u) return true;
-    return /favicon|apple-touch-icon|sprite|spritesheet|icon[_-]?set|transparent[_-]?pixel|spacer\\.|1x1|pixel\\.gif|blank\\.|loading[_-]?spinner|badge|cart[_-]?icon|prime[_-]?logo|smile[_-]?(?:logo|icon)|nav[_-]?logo|\\/icons?\\//i.test(
+    return /favicon|apple-touch-icon|sprite|spritesheet|icon[_-]?set|transparent[_-]?pixel|spacer\\.|1x1|pixel\\.gif|blank\\.|loading[_-]?spinner|badge|cart[_-]?icon|prime[_-]?logo|smile[_-]?(?:logo|icon)|nav[_-]?logo|\\/icons?\\/|\\/thumbnails?\\/|\\/thumbs?\\//i.test(
       u,
-    ) || /[._-](?:SS|SX|SY|US|UX|UY|AC_US|AC_UL|AC_SX|AC_SY|_SL)(?:20|32|40|50|60|70|75|80|90|100)(?:[._,]|$)/i.test(
+    ) || /[._-](?:SS|SX|SY|US|UX|UY|AC_US|AC_UL|AC_SX|AC_SY|_SL)(?:20|32|40|50|60|70|75|80|90|100)(?:[._,]|$)|[._-](?:20|32|40|50|60|70|75|80|90|100)x(?:20|32|40|50|60|70|75|80|90|100)(?:[._@-]|$)|\\/(?:20|32|40|50|60|70|75|80|90|100)x(?:20|32|40|50|60|70|75|80|90|100)(?:\\/|$)|[?&](?:w|width|h|height|s|size)=(?:20|32|40|50|60|70|75|80|90|100)(?:&|$)/i.test(
       u,
     );
   };
@@ -159,8 +161,21 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
   ldImages.forEach((u) => pushImg(u));
   pushImg(ogImage);
 
-  const landing =
-    document.querySelector("#landingImage, #imgTagWrapperId img, #main-image, img[data-old-hires]");
+  // Generic product-hero candidates (Amazon landingImage is one optional selector)
+  const landing = document.querySelector(
+    [
+      "#landingImage",
+      "#imgTagWrapperId img",
+      "#main-image",
+      "img[data-old-hires]",
+      ".product__media img",
+      ".product-single__photo img",
+      ".product-gallery__image img",
+      '[data-testid="product-image"] img',
+      "img[itemprop='image']",
+      ".woocommerce-product-gallery__image img",
+    ].join(", "),
+  );
   if (landing) {
     pushImg(
       landing.getAttribute("data-old-hires") ||
@@ -168,7 +183,7 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
         landing.currentSrc ||
         landing.src,
     );
-    // data-a-dynamic-image is a JSON map of url→size
+    // data-a-dynamic-image is a JSON map of url→size (Amazon and similar)
     try {
       const dyn = landing.getAttribute("data-a-dynamic-image");
       if (dyn) {
@@ -189,7 +204,15 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
 
   for (const img of Array.from(
     document.querySelectorAll(
-      "#altImages img, #imageBlock img, main img[src*='media-amazon'], main img, article img",
+      [
+        "#altImages img",
+        "#imageBlock img",
+        ".product__media img",
+        ".product-gallery img",
+        "main img",
+        "article img",
+        "[itemtype*='Product'] img",
+      ].join(", "),
     ),
   )) {
     if (images.length >= 8) break;
