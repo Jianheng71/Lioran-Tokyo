@@ -10,14 +10,38 @@ export class HermesUnavailableError extends Error {
 export async function hermesReachable(): Promise<{ ok: boolean; detail: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 2500);
+  const probeUrl = `${config.hermesBaseUrl}/v1/models`;
   try {
-    const res = await fetch(`${config.hermesBaseUrl}/v1/models`, {
+    const res = await fetch(probeUrl, {
       signal: controller.signal,
     });
+    const ctype = (res.headers.get("content-type") || "").toLowerCase();
+    const body = (await res.text()).slice(0, 240);
+    const looksHtml =
+      ctype.includes("text/html") ||
+      /^\s*<!doctype html/i.test(body) ||
+      /^\s*<html[\s>]/i.test(body);
+
     if (!res.ok) {
-      return { ok: false, detail: `HTTP ${res.status} from ${config.hermesBaseUrl}` };
+      if (res.status === 404 || looksHtml) {
+        return {
+          ok: false,
+          detail: looksHtml
+            ? `HTTP ${res.status} HTML page from ${probeUrl} (not an OpenAI-compatible /v1/models API)`
+            : `HTTP ${res.status} from ${probeUrl}`,
+        };
+      }
+      return { ok: false, detail: `HTTP ${res.status} from ${probeUrl}` };
     }
-    return { ok: true, detail: `reachable at ${config.hermesBaseUrl}` };
+
+    if (looksHtml) {
+      return {
+        ok: false,
+        detail: `HTML page from ${probeUrl} (not an OpenAI-compatible /v1/models API)`,
+      };
+    }
+
+    return { ok: true, detail: `reachable at ${config.hermesBaseUrl} (GET /v1/models ok)` };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { ok: false, detail: msg };

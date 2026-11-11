@@ -29,11 +29,11 @@ Do not commit the MP4s.
 - **Chrome / Chromium** (Crawlee crawl + HyperFrames render)  
   - Auto-detected from common paths / `PATH` when possible  
   - If auto-detect fails (Puppeteer “Failed to launch browser”), set `CHROME_PATH` in `.env` to the browser binary, e.g. `CHROME_PATH=/usr/bin/google-chrome-stable`
-- **Hermes / AlinGPT** already deployed on this machine from [Jianheng71/Lioran](https://github.com/Jianheng71/Lioran) (one-time host setup; do **not** vendor a model here)  
-  - Default `HERMES_BASE_URL=http://127.0.0.1:43127` (`hermes3:8b`)  
-  - Doctor probes `GET /v1/models`  
-  - If that address returns **HTTP 404**, something else is usually bound on the port, or Hermes is not serving `/v1/models` — start the Lioran Hermes stack or fix `HERMES_BASE_URL`  
-  - `npm run render:fixture` and fixture-related health still work without Hermes (`fixtureRenderRequiresHermes: false`). Confirmed chat jobs that need the model require a healthy Hermes.
+- **Hermes / LLM** already deployed on the host as an **OpenAI-compatible** HTTP API (do **not** vendor a model into this repo)  
+  - Set `HERMES_BASE_URL` to that base URL; doctor probes `GET {HERMES_BASE_URL}/v1/models` and expects model JSON, not HTML  
+  - The example default `http://127.0.0.1:43127` is only a starting guess. On some machines that port is a different app (e.g. a Next.js HTML page) and `/v1/models` returns **404** — then set `HERMES_BASE_URL` in `.env` to the working local address  
+  - One common example is `http://127.0.0.1:11434` when Ollama is serving `hermes3:8b` there; verify on your machine — do **not** assume `43127` or `11434` for every environment  
+  - `npm run render:fixture` still works without Hermes (`fixtureRenderRequiresHermes: false`). Confirmed chat jobs that need the model require a healthy Hermes
 
 `npm run doctor` prints concrete install / path hints for the checks above.
 
@@ -45,7 +45,8 @@ cd Lioran-Tokyo
 npm install
 cp .env.example .env
 # Optional: CHROME_PATH=/usr/bin/google-chrome-stable
-# HERMES_BASE_URL defaults to http://127.0.0.1:43127
+# Set HERMES_BASE_URL to an OpenAI-compatible base where GET /v1/models works
+# (example when Ollama serves hermes3:8b: http://127.0.0.1:11434)
 npm run doctor
 npm run dev
 ```
@@ -103,4 +104,4 @@ Do not change `data-duration` or segment starts: **0–1.125 / 1.125–10.5 / 10
 
 ## Environment
 
-See `.env.example`: `PORT`, `HERMES_BASE_URL` (reuse Lioran Hermes), `HERMES_MODEL`, `HYPERFRAMES_VERSION=0.9.32`, `CHROME_PATH` (optional override), crawl/Hermes/render timeouts, `JOB_RETENTION`.
+See `.env.example`: `PORT`, `HERMES_BASE_URL` (OpenAI-compatible base; verify `GET /v1/models`), `HERMES_MODEL`, `HYPERFRAMES_VERSION=0.9.32`, `CHROME_PATH` (optional override), crawl/Hermes/render timeouts, `JOB_RETENTION`. FFmpeg/ffprobe must already be on `PATH` (doctor does not hardcode a user-local bin directory).
