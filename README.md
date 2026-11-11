@@ -4,7 +4,7 @@ Local service: open an AI dialog, confirm the request, crawl a public product pa
 
 Pinned renderer: **`hyperframes@0.9.32`** (do not bump).
 
-UI standard: **`AESTHETICS.md`** (2026-11-11) — P5 chat window follows [jakobhoeg/nextjs-ollama-llm-ui](https://github.com/jakobhoeg/nextjs-ollama-llm-ui) parts in `ui/chat-window/`. Wordmark **Lioran—Tokyo**. Film fill stays on official HyperFrames variables via `--variables-file` / `--strict-variables`.
+UI standard: **`AESTHETICS.md`** (2026-11-11) — P5 chat window follows [jakobhoeg/nextjs-ollama-llm-ui](https://github.com/jakobhoeg/nextjs-ollama-llm-ui) parts in `ui/chat-window/`. Wordmark **Lioran—Tokyo**. Chrome, prompts, and buttons are **Chinese/English bilingual** (language switch; default Chinese first). On-video text still follows the product-page language. Film fill stays on official HyperFrames variables via `--variables-file` / `--strict-variables`.
 
 ## Templates (five selectable)
 

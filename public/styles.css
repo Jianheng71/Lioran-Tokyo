@@ -29,6 +29,34 @@
   font-display: swap;
   src: url("/fonts/inter-latin-800.woff2") format("woff2");
 }
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/noto-sans-sc-700.woff2") format("woff2");
+}
 
 :root {
   --background: 0 0% 100%;
@@ -54,7 +82,8 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --sidebar-width: 280px;
   --sidebar-collapsed: 72px;
-  --font: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font: "Noto Sans SC", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --brand-crimson: #c41e3a;
   --scrollbar-thumb-color: #ccc;
   --scrollbar-thumb-hover-color: #aaa;
 }
@@ -195,6 +224,48 @@ body {
   outline-offset: 2px;
 }
 
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-mark {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.empty-mark {
+  width: 64px;
+  height: 64px;
+  display: block;
+  border-radius: 14px;
+}
+
+.lang-toggle {
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lang-toggle:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+}
+
+.lang-toggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 .sidebar-brand {
   font-weight: 600;
   font-size: 15px;
@@ -204,6 +275,7 @@ body {
   text-overflow: ellipsis;
 }
 
+.shell.sidebar-collapsed .brand-lockup .sidebar-brand,
 .shell.sidebar-collapsed .sidebar-brand,
 .shell.sidebar-collapsed .sidebar-label,
 .shell.sidebar-collapsed .session-preview,
@@ -347,6 +419,10 @@ body {
   letter-spacing: -0.01em;
 }
 
+.topbar-title.brand-lockup span {
+  white-space: nowrap;
+}
+
 .topbar-spacer {
   flex: 1;
 }
@@ -468,6 +544,12 @@ body {
 
 .bubble-row.assistant {
   align-self: flex-start;
+}
+
+.avatar img {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .avatar {
@@ -729,7 +811,8 @@ body {
     width: min(var(--sidebar-width), 86vw);
   }
 
-  .shell.sidebar-collapsed .sidebar-brand,
+  .shell.sidebar-collapsed .brand-lockup .sidebar-brand,
+.shell.sidebar-collapsed .sidebar-brand,
   .shell.sidebar-collapsed .sidebar-label,
   .shell.sidebar-collapsed .session-preview,
   .shell.sidebar-collapsed .sidebar-foot a {

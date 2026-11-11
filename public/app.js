@@ -2,10 +2,99 @@
  * Lioran—Tokyo P5 chat window.
  * Layout adapted from jakobhoeg/nextjs-ollama-llm-ui (MIT, see ui/chat-window/).
  * Wires Hono APIs only — no Ollama /api/tags, no LangChain useChat.
+ * UI chrome is Chinese/English bilingual (default Chinese first).
  */
 
 const HISTORY_KEY = "lioran.sessions";
 const ACTIVE_KEY = "lioran.sessionId";
+const LANG_KEY = "lioran.uiLang";
+
+const STRINGS = {
+  zh: {
+    skip: "跳到输入框",
+    sessionsAria: "会话",
+    newChat: "新对话",
+    yourChats: "你的对话",
+    historyAria: "对话历史",
+    license: "许可",
+    healthTitle: "服务状态",
+    conversationAria: "对话",
+    openSidebar: "打开侧栏",
+    collapseSidebar: "收起侧栏",
+    expandSidebar: "展开侧栏",
+    emptySub: "说明你要的促销片，有商品页链接也可以一并贴上。先问清楚，确认后才开始做视频。",
+    confirmStart: "确认并开始",
+    confirmFallback: "我已理解你的请求。确认后开始做视频，也可以先再补一句说明。",
+    messageLabel: "消息",
+    composerPlaceholder: "用这个链接做一条促销片，价格保留日元。",
+    composerHint: "Enter 发送 · Shift+Enter 换行",
+    send: "发送",
+    footNote: "仅用于你有权使用的页面。",
+    noChats: "还没有对话",
+    deleteChat: "删除对话",
+    newChatPreview: "新对话",
+    healthReady: "就绪",
+    healthHermesOffline: "就绪 · Hermes 离线",
+    healthDegraded: "降级",
+    healthUnreachable: "不可达",
+    sessionMissing: "找不到会话",
+    requestFailed: "请求失败",
+    confirmFailed: "确认失败",
+    confirmUser: "确认",
+    queued: "已入队。成片会出现在这条对话里。",
+    status: "状态",
+    jobMissing: "任务不存在",
+    videoReady: "视频已就绪。可在上方播放或下载，也可以再说一句要改什么。",
+    jobFailed: "任务失败",
+    downloadMp4: "下载 MP4",
+    localRules: "本地规则",
+    langToggle: "中 / EN",
+    langAria: "切换为英文界面",
+  },
+  en: {
+    skip: "Skip to composer",
+    sessionsAria: "Sessions",
+    newChat: "New chat",
+    yourChats: "Your chats",
+    historyAria: "Chat history",
+    license: "License",
+    healthTitle: "Service health",
+    conversationAria: "Conversation",
+    openSidebar: "Open sidebar",
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
+    emptySub:
+      "Describe the promo you need, including a product page if you have one. Questions come first; the video starts only after you confirm.",
+    confirmStart: "Confirm and start",
+    confirmFallback:
+      "I think I understand the request. Confirm to start the video, or send another note first.",
+    messageLabel: "Message",
+    composerPlaceholder: "Make a promo from this link, and keep the price in yen.",
+    composerHint: "Enter to send · Shift+Enter for a new line",
+    send: "Send",
+    footNote: "For pages you have the right to use.",
+    noChats: "No chats yet",
+    deleteChat: "Delete chat",
+    newChatPreview: "New chat",
+    healthReady: "Ready",
+    healthHermesOffline: "Ready · Hermes offline",
+    healthDegraded: "Degraded",
+    healthUnreachable: "Unreachable",
+    sessionMissing: "Session not found",
+    requestFailed: "Request failed",
+    confirmFailed: "Confirm failed",
+    confirmUser: "Confirm",
+    queued: "Queued. The finished video will appear in this chat.",
+    status: "Status",
+    jobMissing: "Job missing",
+    videoReady: "Video ready. Play or download it above, or ask to change one line.",
+    jobFailed: "Job failed",
+    downloadMp4: "Download MP4",
+    localRules: "local rules",
+    langToggle: "EN / 中",
+    langAria: "Switch to Chinese UI",
+  },
+};
 
 const state = {
   sessionId: localStorage.getItem(ACTIVE_KEY) || null,
@@ -14,6 +103,8 @@ const state = {
   activeJobId: null,
   pollTimer: null,
   history: loadHistory(),
+  lang: loadLang(),
+  lastConfirmSummary: null,
 };
 
 const els = {
@@ -34,7 +125,58 @@ const els = {
   confirmText: document.getElementById("confirm-text"),
   confirmBtn: document.getElementById("confirm-btn"),
   health: document.getElementById("health-chip"),
+  langToggle: document.getElementById("lang-toggle"),
 };
+
+function loadLang() {
+  const saved = localStorage.getItem(LANG_KEY);
+  if (saved === "en" || saved === "zh") return saved;
+  return "zh";
+}
+
+function t(key) {
+  return STRINGS[state.lang][key] || STRINGS.zh[key] || key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (key) el.textContent = t(key);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) el.setAttribute("placeholder", t(key));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-title");
+    if (key) el.setAttribute("title", t(key));
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-aria");
+    if (key) el.setAttribute("aria-label", t(key));
+  });
+  if (els.langToggle) {
+    els.langToggle.textContent = t("langToggle");
+    els.langToggle.setAttribute("aria-label", t("langAria"));
+  }
+  const collapsed = els.shell.classList.contains("sidebar-collapsed");
+  els.sidebarCollapse.setAttribute(
+    "aria-label",
+    collapsed ? t("expandSidebar") : t("collapseSidebar"),
+  );
+  if (state.awaitingConfirm) {
+    els.confirmText.textContent = state.lastConfirmSummary || t("confirmFallback");
+  }
+  renderSessionList();
+  void refreshHealth();
+}
+
+function setLang(lang) {
+  state.lang = lang === "en" ? "en" : "zh";
+  localStorage.setItem(LANG_KEY, state.lang);
+  applyI18n();
+}
 
 function loadHistory() {
   try {
@@ -55,7 +197,7 @@ function upsertHistory(sessionId, preview) {
   const next = state.history.filter((item) => item.id !== sessionId);
   next.unshift({
     id: sessionId,
-    preview: (preview || "New chat").slice(0, 80),
+    preview: (preview || t("newChatPreview")).slice(0, 80),
     updatedAt: Date.now(),
   });
   state.history = next;
@@ -76,7 +218,7 @@ function renderSessionList() {
     const empty = document.createElement("p");
     empty.className = "sidebar-label";
     empty.style.marginTop = "0";
-    empty.textContent = "No chats yet";
+    empty.textContent = t("noChats");
     els.sessionList.appendChild(empty);
     return;
   }
@@ -93,7 +235,7 @@ function renderSessionList() {
     const del = document.createElement("button");
     del.type = "button";
     del.className = "session-delete";
-    del.setAttribute("aria-label", "Delete chat");
+    del.setAttribute("aria-label", t("deleteChat"));
     del.textContent = "×";
     del.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -123,7 +265,7 @@ function setCollapsed(collapsed) {
   els.sidebarCollapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
   els.sidebarCollapse.setAttribute(
     "aria-label",
-    collapsed ? "Expand sidebar" : "Collapse sidebar",
+    collapsed ? t("expandSidebar") : t("collapseSidebar"),
   );
   localStorage.setItem("lioran.sidebarCollapsed", collapsed ? "1" : "0");
 }
@@ -139,17 +281,26 @@ function scrollToBottom() {
   });
 }
 
+function makeAvatar() {
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.setAttribute("aria-hidden", "true");
+  const img = document.createElement("img");
+  img.src = "/brand/mark.svg";
+  img.alt = "";
+  img.width = 16;
+  img.height = 16;
+  avatar.appendChild(img);
+  return avatar;
+}
+
 function appendBubble(role, content, opts = {}) {
   showThread();
   const row = document.createElement("div");
   row.className = `bubble-row ${role}`;
 
   if (role === "assistant") {
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = "LT";
-    avatar.setAttribute("aria-hidden", "true");
-    row.appendChild(avatar);
+    row.appendChild(makeAvatar());
   }
 
   const bubble = document.createElement("div");
@@ -177,14 +328,10 @@ function appendSkeleton() {
   showThread();
   const row = document.createElement("div");
   row.className = "bubble-row assistant";
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = "LT";
-  avatar.setAttribute("aria-hidden", "true");
   const bubble = document.createElement("div");
   bubble.className = "bubble skeleton";
   bubble.setAttribute("aria-hidden", "true");
-  row.append(avatar, bubble);
+  row.append(makeAvatar(), bubble);
   els.thread.appendChild(row);
   scrollToBottom();
   return row;
@@ -195,11 +342,6 @@ function appendVideoCard(url, jobId) {
   const row = document.createElement("div");
   row.className = "bubble-row assistant";
 
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = "LT";
-  avatar.setAttribute("aria-hidden", "true");
-
   const card = document.createElement("div");
   card.className = "video-card";
 
@@ -207,7 +349,7 @@ function appendVideoCard(url, jobId) {
   video.controls = true;
   video.playsInline = true;
   video.src = url;
-  video.setAttribute("aria-label", `Promo video ${jobId}`);
+  video.setAttribute("aria-label", `Lioran—Tokyo ${jobId}`);
 
   const actions = document.createElement("div");
   actions.className = "video-actions";
@@ -216,7 +358,7 @@ function appendVideoCard(url, jobId) {
   download.className = "btn btn-secondary";
   download.href = url;
   download.download = `${jobId}.mp4`;
-  download.textContent = "Download MP4";
+  download.textContent = t("downloadMp4");
 
   const meta = document.createElement("span");
   meta.className = "meta";
@@ -225,18 +367,17 @@ function appendVideoCard(url, jobId) {
 
   actions.append(download, meta);
   card.append(video, actions);
-  row.append(avatar, card);
+  row.append(makeAvatar(), card);
   els.thread.appendChild(row);
   scrollToBottom();
 }
 
 function setConfirm(visible, summary) {
   state.awaitingConfirm = visible;
+  state.lastConfirmSummary = summary || null;
   els.confirmBar.hidden = !visible;
   if (visible) {
-    els.confirmText.textContent =
-      summary ||
-      "I think I understand the request. Confirm to start the video, or send another note first.";
+    els.confirmText.textContent = summary || t("confirmFallback");
   }
 }
 
@@ -274,7 +415,7 @@ async function openSession(sessionId) {
     const data = await res.json();
     if (!res.ok) {
       removeHistory(sessionId);
-      appendBubble("assistant", data.error || "Session not found", { error: true });
+      appendBubble("assistant", data.error || t("sessionMissing"), { error: true });
       return;
     }
     state.sessionId = sessionId;
@@ -308,17 +449,17 @@ async function refreshHealth() {
     const data = await res.json();
     const hermesOk = data.checks?.hermes?.ok;
     if (data.ok && hermesOk) {
-      els.health.textContent = "Ready";
+      els.health.textContent = t("healthReady");
       els.health.className = "sidebar-health ok";
     } else if (data.ok) {
-      els.health.textContent = "Ready · Hermes offline";
+      els.health.textContent = t("healthHermesOffline");
       els.health.className = "sidebar-health warn";
     } else {
-      els.health.textContent = "Degraded";
+      els.health.textContent = t("healthDegraded");
       els.health.className = "sidebar-health warn";
     }
   } catch {
-    els.health.textContent = "Unreachable";
+    els.health.textContent = t("healthUnreachable");
     els.health.className = "sidebar-health warn";
   }
 }
@@ -336,7 +477,7 @@ async function sendMessage(message) {
     const data = await res.json();
     skeleton.remove();
     if (!res.ok) {
-      appendBubble("assistant", data.error || "Request failed", { error: true });
+      appendBubble("assistant", data.error || t("requestFailed"), { error: true });
       return;
     }
     state.sessionId = data.sessionId;
@@ -347,7 +488,7 @@ async function sendMessage(message) {
     const clarify = data.status === "need_clarification";
     appendBubble("assistant", data.reply, {
       clarify,
-      meta: data.source === "rules" ? "local rules" : undefined,
+      meta: data.source === "rules" ? t("localRules") : undefined,
     });
     setConfirm(data.status === "ready_to_confirm", data.draft?.summary || data.reply);
     if (data.jobId) {
@@ -374,10 +515,10 @@ async function confirmJob() {
     const data = await res.json();
     skeleton.remove();
     if (!res.ok) {
-      appendBubble("assistant", data.error || "Confirm failed", { error: true });
+      appendBubble("assistant", data.error || t("confirmFailed"), { error: true });
       return;
     }
-    appendBubble("user", "Confirm");
+    appendBubble("user", t("confirmUser"));
     appendBubble("assistant", data.reply);
     setConfirm(false);
     watchJob(data.jobId);
@@ -399,11 +540,11 @@ function stopPoll() {
 
 function watchJob(jobId) {
   state.activeJobId = jobId;
-  appendBubble("assistant", "Queued. The finished video will appear in this chat.", {
+  appendBubble("assistant", t("queued"), {
     progress: true,
     meta: jobId,
   });
-  const status = appendBubble("assistant", "Status: queued", {
+  const status = appendBubble("assistant", `${t("status")}: queued`, {
     progress: true,
     meta: jobId,
   });
@@ -413,12 +554,12 @@ function watchJob(jobId) {
       const res = await fetch(`/v1/jobs/${encodeURIComponent(jobId)}`);
       const job = await res.json();
       if (!res.ok) {
-        status.bubble.textContent = job.error || "Job missing";
+        status.bubble.textContent = job.error || t("jobMissing");
         status.bubble.classList.add("error");
         stopPoll();
         return;
       }
-      status.bubble.textContent = `Status: ${job.status}`;
+      status.bubble.textContent = `${t("status")}: ${job.status}`;
       if (job.stageDetail) {
         status.bubble.textContent += ` · ${job.stageDetail}`;
       }
@@ -430,13 +571,10 @@ function watchJob(jobId) {
       if (job.status === "done" && job.videoUrl) {
         stopPoll();
         appendVideoCard(job.videoUrl, jobId);
-        appendBubble(
-          "assistant",
-          "Video ready. Play or download it above, or ask to change one line.",
-        );
+        appendBubble("assistant", t("videoReady"));
       } else if (job.status === "failed") {
         stopPoll();
-        appendBubble("assistant", job.error || "Job failed", { error: true });
+        appendBubble("assistant", job.error || t("jobFailed"), { error: true });
       }
     } catch (err) {
       status.bubble.textContent = err instanceof Error ? err.message : String(err);
@@ -492,10 +630,13 @@ els.sidebarCollapse.addEventListener("click", () => {
   setCollapsed(!els.shell.classList.contains("sidebar-collapsed"));
 });
 
+els.langToggle.addEventListener("click", () => {
+  setLang(state.lang === "zh" ? "en" : "zh");
+});
+
 setCollapsed(localStorage.getItem("lioran.sidebarCollapsed") === "1");
-renderSessionList();
+applyI18n();
 syncSendEnabled();
-void refreshHealth();
 setInterval(() => void refreshHealth(), 30_000);
 
 if (state.sessionId) {

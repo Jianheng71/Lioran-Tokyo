@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"flash1","type":"string","label":"Flash line 1","default":"FLASH"},{"id":"flash2","type":"string","label":"Flash line 2","default":"SALE"},{"id":"offer","type":"string","label":"Offer / discount","default":"50% OFF"},{"id":"cta","type":"string","label":"CTA button","default":"SHOP NOW"},{"id":"brand","type":"string","label":"Brand","default":"Brand"},{"id":"title","type":"string","label":"Product name","default":"Product"},{"id":"price","type":"string","label":"Price","default":""},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"},{"id":"brandMark","type":"image","label":"Product / logo image","default":"assets/product.png"}]'>
+<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"flash1","type":"string","label":"Flash line 1","default":""},{"id":"flash2","type":"string","label":"Flash line 2","default":""},{"id":"offer","type":"string","label":"Offer / discount","default":""},{"id":"cta","type":"string","label":"CTA button","default":"Learn more"},{"id":"brand","type":"string","label":"Brand","default":"Brand"},{"id":"title","type":"string","label":"Product name","default":"Product"},{"id":"price","type":"string","label":"Price","default":""},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"},{"id":"brandMark","type":"image","label":"Product / logo image","default":"assets/product.png"}]'>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1080, height=1920" />
@@ -20,7 +20,7 @@
     #root{width:1080px;height:1920px;position:relative;overflow:hidden}
     .scene{position:absolute;inset:0;width:1080px;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;opacity:0;visibility:hidden}
     .s1{background:linear-gradient(135deg,var(--accent,#ff0080),#7928ca)}
-    .big{font-size:140px;font-weight:900;text-transform:uppercase;letter-spacing:-4px;line-height:.95;text-align:center;max-width:980px;word-break:break-word}
+    .big{font-size:140px;font-weight:900;text-transform:uppercase;letter-spacing:0;line-height:.95;text-align:center;max-width:980px;word-break:break-word}
     .s2{background:#0a0a0a}
     .product{width:700px;height:700px;background:linear-gradient(145deg,#1a1a1a,#2a2a2a);border-radius:40px;display:flex;justify-content:center;align-items:center;overflow:hidden}
     .product img{width:80%;height:80%;object-fit:contain}
@@ -33,16 +33,16 @@
 <body>
   <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
     <div class="scene s1" id="c1" data-start="0" data-duration="2.5" data-track-index="1" data-no-timeline>
-      <h1 class="big" id="flash1" data-var-text="flash1">FLASH</h1>
-      <h1 class="big" id="flash2" data-var-text="flash2">SALE</h1>
+      <h1 class="big" id="flash1" data-var-text="flash1"></h1>
+      <h1 class="big" id="flash2" data-var-text="flash2"></h1>
     </div>
     <div class="scene s2" id="c2" data-start="2.5" data-duration="7.5" data-track-index="1" data-no-timeline>
       <div class="product" id="productCard"><img data-var-src="brandMark" src="assets/product.png" alt="" /></div>
       <p class="product-name" data-var-text="title">Product</p>
     </div>
     <div class="scene s3" id="c3" data-start="10" data-duration="5" data-track-index="1" data-no-timeline>
-      <h1 class="cta" id="offer" data-var-text="offer">50% OFF</h1>
-      <div class="btn" id="btn" data-var-text="cta">SHOP NOW</div>
+      <h1 class="cta" id="offer" data-var-text="offer"></h1>
+      <div class="btn" id="btn" data-var-text="cta">Learn more</div>
     </div>
   </div>
   <script>

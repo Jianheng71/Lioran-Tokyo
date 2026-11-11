@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"impact","type":"string","label":"Impact word","default":"CREATE"},{"id":"line1","type":"string","label":"Split line 1","default":"DON'T"},{"id":"line2","type":"string","label":"Split line 2","default":"SETTLE"},{"id":"highlight","type":"string","label":"Highlight box","default":"FOR AVERAGE"},{"id":"brand","type":"string","label":"Brand name","default":"BRAND"},{"id":"cta","type":"string","label":"CTA","default":"JOIN THE DROP →"},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"}]'>
+<html lang="en" data-resolution="portrait" data-composition-variables='[{"id":"locale","type":"string","label":"Locale","default":"en"},{"id":"impact","type":"string","label":"Impact word","default":"Brand"},{"id":"line1","type":"string","label":"Split line 1","default":"Key"},{"id":"line2","type":"string","label":"Split line 2","default":"Point"},{"id":"highlight","type":"string","label":"Highlight box","default":"Highlight"},{"id":"brand","type":"string","label":"Brand name","default":"Brand"},{"id":"cta","type":"string","label":"CTA","default":"Learn more"},{"id":"background","type":"color","label":"Background","default":"#0a0a0a"},{"id":"accent","type":"color","label":"Accent","default":"#ff0080"}]'>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1080, height=1920" />
@@ -23,7 +23,7 @@
     .glitch-bg{position:absolute;inset:0;background:linear-gradient(45deg,transparent 48%,rgba(255,0,128,.03) 50%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(0,255,255,.03) 50%,transparent 52%);background-size:60px 60px;animation:bg-glitch .5s infinite}
     @keyframes bg-glitch{0%,100%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(2px,-2px)}60%{transform:translate(-2px,-2px)}80%{transform:translate(2px,2px)}}
     .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.6) 100%);pointer-events:none}
-    .big-text{font-size:120px;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:-4px;text-align:center;max-width:980px;word-break:break-word}
+    .big-text{font-size:120px;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:0;text-align:center;max-width:980px;word-break:break-word}
     .medium-text{font-size:72px;font-weight:800;text-transform:uppercase}
     .accent-text{font-size:56px;font-weight:700;color:var(--accent,#ff0080);text-shadow:0 0 40px color-mix(in srgb, var(--accent,#ff0080) 50%, transparent)}
     .glitch-text{position:relative;animation:text-glitch 3s infinite}
@@ -40,18 +40,18 @@
     <div class="glitch-bg" data-no-timeline></div>
     <div class="vignette" data-no-timeline></div>
     <div class="scene" id="scene1" data-start="0" data-duration="3.65" data-track-index="1" data-no-timeline>
-      <h1 class="big-text glitch-text" id="impact1" data-var-text="impact">CREATE</h1>
+      <h1 class="big-text glitch-text" id="impact1" data-var-text="impact">Brand</h1>
     </div>
     <div class="scene" id="scene2" data-start="3.65" data-duration="3.9" data-track-index="1" data-no-timeline>
-      <h2 class="medium-text" id="dont" data-var-text="line1">DON'T</h2>
-      <h2 class="accent-text" id="settle" data-var-text="line2">SETTLE</h2>
+      <h2 class="medium-text" id="dont" data-var-text="line1">Key</h2>
+      <h2 class="accent-text" id="settle" data-var-text="line2">Point</h2>
     </div>
     <div class="scene" id="scene3" data-start="7.55" data-duration="3.6" data-track-index="1" data-no-timeline>
-      <div class="highlight-box" id="highlightBox"><span id="highlightText" data-var-text="highlight">FOR AVERAGE</span></div>
+      <div class="highlight-box" id="highlightBox"><span id="highlightText" data-var-text="highlight">Highlight</span></div>
     </div>
     <div class="scene" id="scene4" data-start="11.15" data-duration="4" data-track-index="1" data-no-timeline>
-      <h2 class="big-text" id="brand" data-var-text="brand" style="font-size:88px">BRAND</h2>
-      <div class="cta-pulse" id="cta" data-var-text="cta">JOIN THE DROP →</div>
+      <h2 class="big-text" id="brand" data-var-text="brand" style="font-size:88px">Brand</h2>
+      <div class="cta-pulse" id="cta" data-var-text="cta">Learn more</div>
     </div>
   </div>
   <script>
@@ -59,8 +59,13 @@
       const vars = window.__hyperframes ? window.__hyperframes.getVariables() : {};
       if (vars.locale) document.documentElement.lang = String(vars.locale);
 
+      function hasCjk(s) {
+        return /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/.test(s);
+      }
       function splitChars(el) {
         const text = el.textContent || '';
+        // Do not split CJK titles into per-glyph spans.
+        if (!text || hasCjk(text)) return;
         el.innerHTML = text.split('').map((c) => '<span class="char">' + (c === ' ' ? '\u00A0' : c) + '</span>').join('');
       }
       splitChars(document.getElementById('impact1'));

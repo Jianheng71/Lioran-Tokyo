@@ -1,6 +1,6 @@
 # Lioran—Tokyo · P5 界面与视频模板准绳
 
-**状态**：2026-11-11（Asia/Hong_Kong）。总督已确认补令：四套社区模版都要进。官方 `templates/product-promo/` **不动**，仍是默认模版，仍按 `hyperframes@0.9.32` 官方变量填模；不撤、不换。除 `cinematic-product` 外，把同仓 [hyperframes-motion](https://github.com/2boysfromtown/hyperframes-motion)（MIT）的 `kinetic-typo`、`brand-story`、`social-ad` 也列为可选出片模版：保留各自幕次与观感，时长按原定（`social-ad` 15 秒、`cinematic-product` 18 秒）。不把 hyperframes-motion 当 Web UI 页架。P5 仍只按 nextjs-ollama-llm-ui；用户可指定模版，未指定时 AI 按需求选最合适的一套，主商品宣传仍默认 official product-promo。不要再候点名或建议另换默认模版。审样等到工部推仓、可 clone、且五套都能选之后再按 §4 进行。  
+**状态**：2026-11-11（Asia/Hong_Kong）。总督已确认补令：四套社区模版都要进；界面文案、对话提示、按钮改为中英双语（可切换或同屏兼顾，默认先中文）。官方 `templates/product-promo/` **不动**，仍是默认模版，仍按 `hyperframes@0.9.32` 官方变量填模；不撤、不换。除 `cinematic-product` 外，把同仓 [hyperframes-motion](https://github.com/2boysfromtown/hyperframes-motion)（MIT）的 `kinetic-typo`、`brand-story`、`social-ad` 也列为可选出片模版：保留各自幕次与观感，时长按原定（`social-ad` 15 秒、`cinematic-product` 18 秒）。不把 hyperframes-motion 当 Web UI 页架。P5 仍只按 nextjs-ollama-llm-ui；用户可指定模版，未指定时 AI 按需求选最合适的一套，主商品宣传仍默认 official product-promo。片上文字仍跟随商品页语言。双语与五套模版随已发 0.1 之后的版本一并落地，**不要改已发布的 0.1 tag**。不要再候点名或建议另换默认模版。正式 §4 审样等到工部推仓、可 clone、且五套都能选之后再进行；稳妥节奏，勿另开并行重审。此前非正式排查里的「界面中英混排」按本令改成双语方案，不再当漏洞单独催。  
 **落地目录**：`/workspace/hyperframes/lioran-tokyo/`（不要另起目录）。  
 **不要送测试成片。**
 
@@ -29,11 +29,13 @@ landing-page-design 只作卫生门控（间距、运动、焦点、`prefers-red
 - 顶栏、消息列表、聊天气泡、底部输入槽
 - 暗色默认（该仓 `defaultTheme="dark"`）
 
-要改的只是产品身份与交互，不是另做一套布局：字标改为 **Lioran—Tokyo**；输入槽是唯一主输入（占位示例：「用这个链接做一条促销片，价格保留日元。」）；助手的追问与「请确认」在层级上分开，确认是主按钮；进度、错误、成片预览出现在对话流里。模版可在对话里指定或由 AI 按需求选择，不要把模版选择做成抢戏的首屏表单。
+要改的只是产品身份与交互，不是另做一套布局：字标改为 **Lioran—Tokyo**；输入槽是唯一主输入（默认中文占位示例：「用这个链接做一条促销片，价格保留日元。」）；助手的追问与「请确认」在层级上分开，确认是主按钮；进度、错误、成片预览出现在对话流里。模版可在对话里指定或由 AI 按需求选择，不要把模版选择做成抢戏的首屏表单。
+
+**中英双语**：界面文案、对话提示、按钮都要中英双语，可切换或同屏兼顾，默认先中文。专有名词 **Lioran—Tokyo** 各语言下都保留，不要翻译。不要把界面改成只中文，也不要把「中英混排」再当漏洞单独催；按本双语方案落地即可。片上文字不走这套界面双语规则，仍跟随商品页语言。本条随已发 0.1 之后、带五套模版的版本一并落地，不要改已发布的 0.1 tag。
 
 ## 2. 视频模版
 
-共同约束：无声；1080×1920；30fps；片上文案语言跟随商品页；须保住 CJK（已有 Noto Sans SC）；不要改官方变量通道的用法；并发锁仍在。落地仍在本目录，四套社区模版建议分别放在 `templates/cinematic-product/`、`templates/kinetic-typo/`、`templates/brand-story/`、`templates/social-ad/`，不要另起产品目录。保留 MIT 版权声明。一共五套可选用：默认 official product-promo，外加上述四套可选。
+共同约束：无声；1080×1920；30fps；**片上文案语言跟随商品页**（不强制中英双语）；须保住 CJK（已有 Noto Sans SC）；不要改官方变量通道的用法；并发锁仍在。落地仍在本目录，四套社区模版建议分别放在 `templates/cinematic-product/`、`templates/kinetic-typo/`、`templates/brand-story/`、`templates/social-ad/`，不要另起产品目录。保留 MIT 版权声明。一共五套可选用：默认 official product-promo，外加上述四套可选。
 
 ### 2.1 默认：官方 `product-promo`（不动）
 
@@ -59,6 +61,7 @@ landing-page-design 只作卫生门控（间距、运动、焦点、`prefers-red
 - 运动：`cubic-bezier(0.22, 1, 0.36, 1)`；只动画 transform 与 opacity；尊重 `prefers-reduced-motion`。
 - 可见焦点环；加载用与布局同形的骨架；错误写在行内且具体（不要 `alert()`）。
 - 不写 revolutionize / supercharge / cutting edge / effortless 一类。专有名词 **Lioran—Tokyo** 保留。
+- 界面文案、对话提示、按钮按中英双语（可切换或同屏兼顾，默认先中文）；片上文字仍跟随商品页语言。
 - 语义 HTML、跳过链接、favicon、`<title>`，本地工具 noindex。短页脚可链到 README「只用于你有权使用的页面」。
 
 ## 4. 审点（工部推仓、可 clone、且五套都能选后再按此过关或驳回）
@@ -67,7 +70,8 @@ landing-page-design 只作卫生门控（间距、运动、焦点、`prefers-red
 2. 确认之前不会进入爬取或渲染；确认主按钮清楚。
 3. 成片在同一对话里可看可下；再改一句仍先确认。
 4. 五套都能选。主商品宣传、以及用户未指定且需求就是主商品宣传时，默认官方 `product-promo`：`hyperframes@0.9.32`，走官方 `--variables-file` / `--strict-variables`，15s 时间轴与官方变量通道未被打开或替换。用户可指定四套社区模版之一；未指定时 AI 按需求选最合适的一套。`cinematic-product` 仍是四幕观感、时长 18 秒（4+5+5+4），没有被硬压成 15 秒；`social-ad` 仍是三幕观感、时长 15 秒；`kinetic-typo` 与 `brand-story` 各自保留四幕观感与原定时长。五套都是无声、1080×1920、30fps。没有把 hyperkuy、hyperframes-motion 或 Dusk Mode 当 Web 页架。Drafting Dark 语言不铺到聊天窗口。
-5. 未送测试成片。
+5. 界面文案、对话提示、按钮为中英双语（可切换或同屏兼顾，默认先中文）；专有名词 Lioran—Tokyo 保留。片上文字仍跟随商品页语言。不要把「中英混排」再当缺陷驳回。
+6. 未送测试成片。已发布的 0.1 tag 未被改写。
 
 ## 5. 已废条目（勿再执行）
 
@@ -78,3 +82,5 @@ landing-page-design 只作卫生门控（间距、运动、焦点、`prefers-red
 - 撤掉或换掉官方 `product-promo`，或把任一社区模版改成默认、或把 `cinematic-product` 的 18 秒硬压成 15 秒。
 - 只接入 `cinematic-product`、不把 `kinetic-typo` / `brand-story` / `social-ad` 列为可选（与本次补令相反）。
 - 「先不按已锁死只用 product-promo 执行」（与先前总督令相反，已更正；现仅新增四套可选，默认仍是 product-promo，主商品宣传仍默认这一套）。
+- 把界面改成只中文，或把「界面中英混排」当漏洞单独催（已由总督补令改为中英双语方案，默认先中文）。
+- 改写已发布的 0.1 tag 来落地双语或五套模版。
