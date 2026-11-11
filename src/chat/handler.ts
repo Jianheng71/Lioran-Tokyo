@@ -1,6 +1,6 @@
 import { understandMessage } from "../llm/dialog.js";
 import { enqueueInstructionJob, enqueueUrlJob } from "../jobs/queue.js";
-import { getOrCreateSession, saveSession } from "../session/store.js";
+import { getOrCreateSession, getSession, requireSession, saveSession } from "../session/store.js";
 import type { DialogPlan, JobRecord, SessionRecord } from "../schemas.js";
 import { chooseTemplateId, DEFAULT_TEMPLATE_ID } from "../templates/catalog.js";
 
@@ -20,6 +20,25 @@ function applyDraft(session: SessionRecord, plan: DialogPlan): void {
   };
   if (plan.status === "need_clarification") session.chat.phase = "clarifying";
   else if (plan.status === "ready_to_confirm") session.chat.phase = "awaiting_confirm";
+}
+
+function downgradePrematureConfirm(
+  plan: DialogPlan,
+  phase: SessionRecord["chat"]["phase"],
+): void {
+  const mode = plan.understood.mode;
+  const actionable =
+    (mode === "new_from_url" && Boolean(plan.understood.url)) ||
+    (mode === "revise" && Boolean(plan.understood.instruction));
+  if (phase === "running" || !actionable) {
+    plan.status = "need_clarification";
+    if (phase === "running") {
+      plan.reply = "A video is already running, so I did not queue another.";
+    }
+    return;
+  }
+  plan.status = "ready_to_confirm";
+  plan.reply = `${plan.reply} Reply confirm to start. Nothing is queued yet.`;
 }
 
 function startFromDraft(session: SessionRecord): JobRecord {
@@ -47,6 +66,8 @@ function startFromDraft(session: SessionRecord): JobRecord {
 export async function handleChatMessage(opts: {
   sessionId?: string;
   message: string;
+  /** Tests inject this so a dialog plan can be forced without Hermes. */
+  understand?: typeof understandMessage;
 }): Promise<{
   sessionId: string;
   reply: string;
@@ -62,15 +83,43 @@ export async function handleChatMessage(opts: {
     throw Object.assign(new Error("message is required"), { status: 400 });
   }
 
+  const understand = opts.understand ?? understandMessage;
   const session = getOrCreateSession(opts.sessionId);
+  const phaseBefore = session.chat.phase;
   session.chat.messages.push({
     role: "user",
     content: message,
     at: new Date().toISOString(),
   });
 
-  const { plan, source } = await understandMessage(session, message);
+  const { plan, source } = await understand(session, message);
+
+  // Honor confirmed only for a plan that is still awaiting confirmation.
+  // A model can return confirmed on the first message; that must not enqueue.
+  if (plan.status === "confirmed" && phaseBefore === "awaiting_confirm") {
+    const fresh = getSession(session.sessionId);
+    if (!fresh || fresh.chat.phase !== "awaiting_confirm") {
+      return {
+        sessionId: session.sessionId,
+        reply: "That plan is no longer waiting for confirmation.",
+        phase: fresh?.chat.phase ?? phaseBefore,
+        status: "need_clarification",
+        draft: fresh?.chat.draft ?? session.chat.draft,
+        jobId: null,
+        messages: fresh?.chat.messages ?? session.chat.messages,
+        source,
+      };
+    }
+  }
+
+  let keepRunning = false;
+  if (plan.status === "confirmed" && phaseBefore !== "awaiting_confirm") {
+    downgradePrematureConfirm(plan, phaseBefore);
+    keepRunning = phaseBefore === "running";
+  }
+
   applyDraft(session, plan);
+  if (keepRunning) session.chat.phase = "running";
 
   let jobId: string | null = null;
   if (plan.status === "confirmed") {
@@ -105,14 +154,13 @@ export function handleChatConfirm(sessionId: string): {
   status: "queued";
   reply: string;
 } {
-  const session = getOrCreateSession(sessionId);
-  if (session.chat.phase !== "awaiting_confirm" && !session.chat.draft.mode) {
+  const session = requireSession(sessionId);
+  if (session.chat.phase !== "awaiting_confirm") {
     throw Object.assign(new Error("Nothing awaiting confirmation on this session"), {
       status: 400,
     });
   }
   const job = startFromDraft(session);
-  const templateId = session.chat.draft.templateId || DEFAULT_TEMPLATE_ID;
   session.chat.messages.push({
     role: "user",
     content: "Confirm",
@@ -120,7 +168,7 @@ export function handleChatConfirm(sessionId: string): {
   });
   session.chat.messages.push({
     role: "assistant",
-    content: `Understood. Starting with the ${templateId} template now.`,
+    content: "Understood. Starting the official product-promo template now.",
     at: new Date().toISOString(),
   });
   session.chat.phase = "running";
@@ -130,6 +178,6 @@ export function handleChatConfirm(sessionId: string): {
     sessionId: session.sessionId,
     jobId: job.jobId,
     status: "queued",
-    reply: `Understood. Starting with the ${templateId} template now.`,
+    reply: "Understood. Starting the official product-promo template now.",
   };
 }

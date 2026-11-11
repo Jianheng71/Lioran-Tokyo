@@ -14,25 +14,67 @@
 
     <div class="shell" id="shell">
       <aside class="sidebar" id="sidebar" aria-label="会话" data-i18n-aria="sessionsAria">
-        <div class="sidebar-inner">
-          <button type="button" class="sidebar-new" id="new-chat" title="新对话" data-i18n-title="newChat">
-            <span class="brand-lockup" aria-hidden="true">
-              <img class="brand-mark" src="/brand/mark.svg" alt="" width="22" height="22" />
-              <span class="sidebar-brand">Lioran—Tokyo</span>
-            </span>
+        <div class="sidebar-top">
+          <div class="sidebar-brand-row">
+            <a class="sidebar-home" href="/" aria-label="Lioran—Tokyo">
+              <img class="brand-icon" src="/brand/icon.svg" alt="" width="28" height="28" />
+              <span class="sidebar-wordmark">Lioran—Tokyo</span>
+            </a>
+            <button
+              type="button"
+              class="icon-btn desktop-only"
+              id="sidebar-collapse"
+              aria-label="收起侧栏"
+              data-i18n-aria="collapseSidebar"
+              aria-controls="sidebar"
+              aria-expanded="true"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  d="M4 7h16M4 12h10M4 17h16"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" class="btn-new-chat" id="new-chat" data-i18n-title="newChat" title="新对话">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path
-                fill="currentColor"
-                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.06-9.06.92.92L5.92 19.58zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                d="M12 5v14M5 12h14"
               />
             </svg>
+            <span data-i18n="newChat">新对话</span>
           </button>
+
+          <label class="sidebar-search" for="history-search">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+              <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16.5 16.5 20 20" />
+            </svg>
+            <input
+              id="history-search"
+              type="search"
+              autocomplete="off"
+              data-i18n-placeholder="searchChats"
+              placeholder="搜索对话"
+            />
+          </label>
+
           <p class="sidebar-label" data-i18n="yourChats">你的对话</p>
           <nav class="sidebar-list" id="session-list" aria-label="对话历史" data-i18n-aria="historyAria"></nav>
         </div>
+
         <footer class="sidebar-foot">
-          <a href="/license.txt" data-i18n="license">许可</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-label="Switch language">中 / EN</button>
+          <a href="/license.txt" data-i18n="license">许可</a>
           <span class="sidebar-health" id="health-chip" title="服务状态" data-i18n-title="healthTitle">检查中</span>
         </footer>
       </aside>
@@ -50,47 +92,31 @@
             aria-controls="sidebar"
             aria-expanded="false"
           >
-            <svg class="icon" viewBox="0 0 15 15" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path
-                fill="currentColor"
-                fill-rule="evenodd"
-                d="M1.5 3a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1h-12zM1 7.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z"
-                clip-rule="evenodd"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                d="M4 7h16M4 12h16M4 17h16"
               />
             </svg>
           </button>
-          <button
-            type="button"
-            class="icon-btn desktop-only"
-            id="sidebar-collapse"
-            aria-label="收起侧栏"
-            data-i18n-aria="collapseSidebar"
-            aria-controls="sidebar"
-            aria-expanded="true"
-          >
-            <svg class="icon" viewBox="0 0 15 15" aria-hidden="true">
-              <path
-                fill="currentColor"
-                fill-rule="evenodd"
-                d="M1.5 3a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1h-12zM1 7.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </button>
-          <div class="topbar-title brand-lockup" aria-label="Lioran—Tokyo">
-            <img class="brand-mark" src="/brand/mark.svg" alt="" width="22" height="22" />
+          <div class="topbar-brand brand-lockup" aria-label="Lioran—Tokyo">
+            <img class="brand-mark" src="/brand/mark.svg" alt="" width="20" height="20" />
             <span>Lioran—Tokyo</span>
           </div>
           <span class="topbar-spacer" aria-hidden="true"></span>
+          <span class="topbar-mode" id="mode-chip" data-i18n="modeLocal">本地</span>
         </header>
 
-        <div class="chat-column">
+        <div class="chat-stage" id="chat-stage">
           <div class="messages" id="scroller" role="log" aria-live="polite" aria-relevant="additions">
             <div class="empty" id="empty">
-              <img class="empty-mark" src="/brand/icon.svg" alt="" width="64" height="64" />
+              <img class="empty-mark" src="/brand/icon.svg" alt="" width="72" height="72" />
               <h1 class="empty-title">Lioran—Tokyo</h1>
               <p class="empty-sub" data-i18n="emptySub">
-                说明你要的促销片，有商品页链接也可以一并贴上。先问清楚，确认后才开始做视频。
+                说明你要的促销片，贴上任意公开页面链接即可。先问清楚，确认后才开始做视频。
               </p>
             </div>
             <div class="message-list" id="thread" hidden></div>
@@ -105,7 +131,25 @@
               </button>
             </div>
 
-            <form class="composer-card" id="form">
+            <form class="composer-pill" id="form">
+              <button
+                type="button"
+                class="composer-plus"
+                id="composer-plus"
+                aria-label="工具"
+                data-i18n-aria="tools"
+                title="工具"
+              >
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    d="M12 5v14M5 12h14"
+                  />
+                </svg>
+              </button>
               <label class="sr-only" for="composer" data-i18n="messageLabel">消息</label>
               <textarea
                 id="composer"
@@ -115,9 +159,9 @@
                 data-i18n-placeholder="composerPlaceholder"
                 autocomplete="off"
               ></textarea>
-              <div class="composer-actions">
-                <span class="composer-hint" data-i18n="composerHint">Enter 发送 · Shift+Enter 换行</span>
-                <button type="submit" class="icon-btn send" id="send" aria-label="发送" data-i18n-aria="send" disabled>
+              <div class="composer-rail">
+                <span class="composer-tier" data-i18n="modeLocal">本地</span>
+                <button type="submit" class="send-btn" id="send" aria-label="发送" data-i18n-aria="send" disabled>
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       fill="none"
@@ -125,16 +169,23 @@
                       stroke-width="2"
                       stroke-linecap="round"
                       stroke-linejoin="round"
-                      d="M3 12h18M13 6l6 6-6 6"
+                      d="M5 12h14M13 6l6 6-6 6"
                     />
                   </svg>
                 </button>
               </div>
             </form>
+            <p class="composer-hint" data-i18n="composerHint">Enter 发送 · Shift+Enter 换行</p>
             <p class="foot-note" data-i18n="footNote">仅用于你有权使用的页面。</p>
           </div>
         </div>
       </section>
+    </div>
+
+    <div class="plus-menu" id="plus-menu" hidden>
+      <button type="button" class="plus-item" id="plus-new" data-i18n="newChat">新对话</button>
+      <button type="button" class="plus-item" id="plus-lang">中 / EN</button>
+      <a class="plus-item" href="/license.txt" data-i18n="license">许可</a>
     </div>
 
     <script type="module" src="/app.js"></script>

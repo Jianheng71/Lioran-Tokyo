@@ -4,7 +4,7 @@ import { crawlProductPage } from "../crawler/index.js";
 import { generateVideoSpecFromFacts, reviseVideoSpec } from "../llm/videoSpec.js";
 import { fillTemplate } from "../templater/index.js";
 import { renderJobVideo } from "../renderer/index.js";
-import { getSession, saveSession, updateSessionAfterJob } from "../session/store.js";
+import { getSession, retainSessionAssets, saveSession, updateSessionAfterJob } from "../session/store.js";
 import { jobDir, pruneOldJobs, setJobStatus } from "./store.js";
 import type { JobRecord } from "../schemas.js";
 
@@ -27,31 +27,25 @@ export async function runJob(job: JobRecord): Promise<void> {
       if (!job.url) throw new Error("URL job missing url");
       setJobStatus(job.jobId, "crawling");
       facts = await crawlProductPage(job.url, assetDir);
-      assets = {
-        logo: facts.logo ?? null,
-        productImage: facts.images[0] ?? null,
-      };
-      session.lastFacts = facts;
-      session.assetPaths = assets;
+      retainSessionAssets(session, facts);
+      facts = session.lastFacts;
+      assets = { ...session.assetPaths };
       saveSession(session);
     } else {
       if (!session.lastVideoSpec) {
         throw new Error("No previous VideoSpec on this session; cannot revise without recrawl.");
       }
-      // Reuse prior assets; copy into this job dir for isolation
-      if (assets.productImage && fs.existsSync(assets.productImage)) {
-        const dest = path.join(assetDir, path.basename(assets.productImage));
-        fs.copyFileSync(assets.productImage, dest);
-        assets.productImage = dest;
-      }
-      if (assets.logo && fs.existsSync(assets.logo)) {
-        const dest = path.join(assetDir, path.basename(assets.logo));
-        fs.copyFileSync(assets.logo, dest);
-        assets.logo = dest;
-      }
-      if (!assets.productImage && !assets.logo) {
+      // Keep durable copies under the session. Job dirs are deleted by retention.
+      retainSessionAssets(session, facts);
+      facts = session.lastFacts;
+      assets = { ...session.assetPaths };
+      const hasLocalImage =
+        Boolean(assets.productImage && fs.existsSync(assets.productImage)) ||
+        Boolean(assets.logo && fs.existsSync(assets.logo));
+      if (!hasLocalImage) {
         throw new Error("Previous session has no local product images to reuse.");
       }
+      saveSession(session);
     }
 
     setJobStatus(job.jobId, "generating");
@@ -108,9 +102,9 @@ export async function runJob(job: JobRecord): Promise<void> {
       sessionId: job.sessionId,
       jobId: job.jobId,
       videoSpec,
-      facts,
+      facts: session.lastFacts,
       videoUrl,
-      assetPaths: assets,
+      assetPaths: { ...session.assetPaths },
     });
 
     const s = getSession(job.sessionId);

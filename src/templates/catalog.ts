@@ -13,8 +13,27 @@ export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
 export const DEFAULT_TEMPLATE_ID: TemplateId = "product-promo";
 
+/**
+ * Community four stay on disk (PR #2) but are on hold for chat / selection
+ * until a later round. Chat must not offer or auto-pick them.
+ */
+export const COMMUNITY_TEMPLATES_ENABLED = false;
+
+export const COMMUNITY_TEMPLATE_IDS = [
+  "cinematic-product",
+  "kinetic-typo",
+  "brand-story",
+  "social-ad",
+] as const satisfies readonly TemplateId[];
+
 export function isTemplateId(value: unknown): value is TemplateId {
   return typeof value === "string" && (TEMPLATE_IDS as readonly string[]).includes(value);
+}
+
+export function isSelectableTemplateId(value: unknown): value is TemplateId {
+  if (!isTemplateId(value)) return false;
+  if (!COMMUNITY_TEMPLATES_ENABLED && value !== DEFAULT_TEMPLATE_ID) return false;
+  return true;
 }
 
 export function templateDir(id: TemplateId): string {
@@ -37,6 +56,17 @@ export const TEMPLATE_DURATIONS: Record<TemplateId, number> = {
 export function inferTemplateId(text: string | null | undefined): TemplateId | null {
   if (!text) return null;
   const t = text.toLowerCase();
+
+  if (
+    /\b(product-promo|product promo)\b/.test(t) ||
+    /官方模版|官方模板|默认模版|默认模板|促销模版|促销模板/.test(text)
+  ) {
+    return "product-promo";
+  }
+
+  if (!COMMUNITY_TEMPLATES_ENABLED) {
+    return null;
+  }
 
   if (
     /\b(cinematic-product|cinematic)\b/.test(t) ||
@@ -62,25 +92,22 @@ export function inferTemplateId(text: string | null | undefined): TemplateId | n
   ) {
     return "social-ad";
   }
-  if (
-    /\b(product-promo|product promo)\b/.test(t) ||
-    /官方模版|官方模板|默认模版|默认模板|促销模版|促销模板/.test(text)
-  ) {
-    return "product-promo";
-  }
   return null;
 }
 
 /**
- * When the user did not name a template, choose the most suitable of the five.
- * Main product-promo work stays on official product-promo.
+ * When the user did not name a template, choose the most suitable option.
+ * While community templates are on hold, this always returns product-promo.
  */
 export function chooseTemplateId(opts: {
   named: TemplateId | null;
   message?: string | null;
   instruction?: string | null;
 }): TemplateId {
-  if (opts.named) return opts.named;
+  if (!COMMUNITY_TEMPLATES_ENABLED) {
+    return DEFAULT_TEMPLATE_ID;
+  }
+  if (opts.named && isSelectableTemplateId(opts.named)) return opts.named;
   const fromMessage = inferTemplateId(opts.message);
   if (fromMessage) return fromMessage;
   const fromInstruction = inferTemplateId(opts.instruction);

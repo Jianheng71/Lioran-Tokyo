@@ -1,6 +1,7 @@
 /**
  * Lioran—Tokyo P5 chat window.
- * Layout adapted from jakobhoeg/nextjs-ollama-llm-ui (MIT, see ui/chat-window/).
+ * Visual/interaction standard: Grok-like chat layout (not a Grok/xAI reskin).
+ * Code substrate still draws from jakobhoeg/nextjs-ollama-llm-ui patterns (MIT).
  * Wires Hono APIs only — no Ollama /api/tags, no LangChain useChat.
  * UI chrome is Chinese/English bilingual (default Chinese first).
  */
@@ -14,6 +15,7 @@ const STRINGS = {
     skip: "跳到输入框",
     sessionsAria: "会话",
     newChat: "新对话",
+    searchChats: "搜索对话",
     yourChats: "你的对话",
     historyAria: "对话历史",
     license: "许可",
@@ -22,13 +24,15 @@ const STRINGS = {
     openSidebar: "打开侧栏",
     collapseSidebar: "收起侧栏",
     expandSidebar: "展开侧栏",
-    emptySub: "说明你要的促销片，有商品页链接也可以一并贴上。先问清楚，确认后才开始做视频。",
+    emptySub: "说明你要的促销片，贴上任意公开页面链接即可。先问清楚，确认后才开始做视频。",
     confirmStart: "确认并开始",
     confirmFallback: "我已理解你的请求。确认后开始做视频，也可以先再补一句说明。",
     messageLabel: "消息",
     composerPlaceholder: "用这个链接做一条促销片，价格保留日元。",
     composerHint: "Enter 发送 · Shift+Enter 换行",
     send: "发送",
+    tools: "工具",
+    modeLocal: "本地",
     footNote: "仅用于你有权使用的页面。",
     noChats: "还没有对话",
     deleteChat: "删除对话",
@@ -50,11 +54,16 @@ const STRINGS = {
     localRules: "本地规则",
     langToggle: "中 / EN",
     langAria: "切换为英文界面",
+    copy: "复制",
+    copied: "已复制",
+    retry: "再试一次",
+    assistantLabel: "Lioran—Tokyo",
   },
   en: {
     skip: "Skip to composer",
     sessionsAria: "Sessions",
     newChat: "New chat",
+    searchChats: "Search chats",
     yourChats: "Your chats",
     historyAria: "Chat history",
     license: "License",
@@ -64,7 +73,7 @@ const STRINGS = {
     collapseSidebar: "Collapse sidebar",
     expandSidebar: "Expand sidebar",
     emptySub:
-      "Describe the promo you need, including a product page if you have one. Questions come first; the video starts only after you confirm.",
+      "Describe the promo you need and paste any public page link you have the right to use. Questions come first; the video starts only after you confirm.",
     confirmStart: "Confirm and start",
     confirmFallback:
       "I think I understand the request. Confirm to start the video, or send another note first.",
@@ -72,6 +81,8 @@ const STRINGS = {
     composerPlaceholder: "Make a promo from this link, and keep the price in yen.",
     composerHint: "Enter to send · Shift+Enter for a new line",
     send: "Send",
+    tools: "Tools",
+    modeLocal: "Local",
     footNote: "For pages you have the right to use.",
     noChats: "No chats yet",
     deleteChat: "Delete chat",
@@ -93,6 +104,10 @@ const STRINGS = {
     localRules: "local rules",
     langToggle: "EN / 中",
     langAria: "Switch to Chinese UI",
+    copy: "Copy",
+    copied: "Copied",
+    retry: "Try again",
+    assistantLabel: "Lioran—Tokyo",
   },
 };
 
@@ -102,9 +117,13 @@ const state = {
   awaitingConfirm: false,
   activeJobId: null,
   pollTimer: null,
+  pollGeneration: 0,
   history: loadHistory(),
   lang: loadLang(),
   lastConfirmSummary: null,
+  historyQuery: "",
+  lastUserMessage: null,
+  plusOpen: false,
 };
 
 const els = {
@@ -115,12 +134,17 @@ const els = {
   sidebarBackdrop: document.getElementById("sidebar-backdrop"),
   newChat: document.getElementById("new-chat"),
   sessionList: document.getElementById("session-list"),
+  historySearch: document.getElementById("history-search"),
   empty: document.getElementById("empty"),
   thread: document.getElementById("thread"),
   scroller: document.getElementById("scroller"),
   form: document.getElementById("form"),
   composer: document.getElementById("composer"),
   send: document.getElementById("send"),
+  composerPlus: document.getElementById("composer-plus"),
+  plusMenu: document.getElementById("plus-menu"),
+  plusNew: document.getElementById("plus-new"),
+  plusLang: document.getElementById("plus-lang"),
   confirmBar: document.getElementById("confirm-bar"),
   confirmText: document.getElementById("confirm-text"),
   confirmBtn: document.getElementById("confirm-btn"),
@@ -159,6 +183,12 @@ function applyI18n() {
   if (els.langToggle) {
     els.langToggle.textContent = t("langToggle");
     els.langToggle.setAttribute("aria-label", t("langAria"));
+  }
+  if (els.plusLang) {
+    els.plusLang.textContent = t("langToggle");
+  }
+  if (els.composerPlus) {
+    els.composerPlus.setAttribute("title", t("tools"));
   }
   const collapsed = els.shell.classList.contains("sidebar-collapsed");
   els.sidebarCollapse.setAttribute(
@@ -214,7 +244,12 @@ function removeHistory(sessionId) {
 
 function renderSessionList() {
   els.sessionList.replaceChildren();
-  if (!state.history.length) {
+  const query = state.historyQuery.trim().toLowerCase();
+  const items = state.history.filter((item) => {
+    if (!query) return true;
+    return (item.preview || item.id || "").toLowerCase().includes(query);
+  });
+  if (!items.length) {
     const empty = document.createElement("p");
     empty.className = "sidebar-label";
     empty.style.marginTop = "0";
@@ -222,7 +257,7 @@ function renderSessionList() {
     els.sessionList.appendChild(empty);
     return;
   }
-  for (const item of state.history) {
+  for (const item of items) {
     const row = document.createElement("div");
     row.className = `session-item${item.id === state.sessionId ? " active" : ""}`;
     row.setAttribute("role", "button");
@@ -270,6 +305,24 @@ function setCollapsed(collapsed) {
   localStorage.setItem("lioran.sidebarCollapsed", collapsed ? "1" : "0");
 }
 
+function setPlusMenu(open) {
+  state.plusOpen = open;
+  els.plusMenu.hidden = !open;
+  els.composerPlus.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) {
+    const rect = els.composerPlus.getBoundingClientRect();
+    const menuWidth = Math.min(280, window.innerWidth - 32);
+    let left = rect.left;
+    if (left + menuWidth > window.innerWidth - 16) {
+      left = window.innerWidth - 16 - menuWidth;
+    }
+    els.plusMenu.style.left = `${Math.max(16, left)}px`;
+    els.plusMenu.style.bottom = `${Math.max(16, window.innerHeight - rect.top + 8)}px`;
+    els.plusMenu.style.transform = "none";
+    els.plusMenu.style.width = `${menuWidth}px`;
+  }
+}
+
 function showThread() {
   els.empty.hidden = true;
   els.thread.hidden = false;
@@ -281,17 +334,55 @@ function scrollToBottom() {
   });
 }
 
-function makeAvatar() {
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.setAttribute("aria-hidden", "true");
+function makeAssistantHead() {
+  const head = document.createElement("div");
+  head.className = "assistant-head";
   const img = document.createElement("img");
   img.src = "/brand/mark.svg";
   img.alt = "";
-  img.width = 16;
-  img.height = 16;
-  avatar.appendChild(img);
-  return avatar;
+  img.width = 18;
+  img.height = 18;
+  const label = document.createElement("span");
+  label.textContent = t("assistantLabel");
+  head.append(img, label);
+  return head;
+}
+
+function makeActionRow(content, opts = {}) {
+  const row = document.createElement("div");
+  row.className = "action-row";
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "action-btn";
+  copyBtn.textContent = t("copy");
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      copyBtn.textContent = t("copied");
+      setTimeout(() => {
+        copyBtn.textContent = t("copy");
+      }, 1200);
+    } catch {
+      copyBtn.textContent = t("copy");
+    }
+  });
+  row.appendChild(copyBtn);
+
+  if (opts.retryable && state.lastUserMessage) {
+    const retryBtn = document.createElement("button");
+    retryBtn.type = "button";
+    retryBtn.className = "action-btn";
+    retryBtn.textContent = t("retry");
+    retryBtn.addEventListener("click", () => {
+      const message = state.lastUserMessage;
+      if (!message) return;
+      void sendMessage(message);
+    });
+    row.appendChild(retryBtn);
+  }
+
+  return row;
 }
 
 function appendBubble(role, content, opts = {}) {
@@ -300,7 +391,7 @@ function appendBubble(role, content, opts = {}) {
   row.className = `bubble-row ${role}`;
 
   if (role === "assistant") {
-    row.appendChild(makeAvatar());
+    row.appendChild(makeAssistantHead());
   }
 
   const bubble = document.createElement("div");
@@ -319,6 +410,11 @@ function appendBubble(role, content, opts = {}) {
   }
 
   row.appendChild(bubble);
+
+  if (role === "assistant" && !opts.progress && !opts.skeleton) {
+    row.appendChild(makeActionRow(content, { retryable: Boolean(opts.error) }));
+  }
+
   els.thread.appendChild(row);
   scrollToBottom();
   return { row, bubble };
@@ -328,10 +424,11 @@ function appendSkeleton() {
   showThread();
   const row = document.createElement("div");
   row.className = "bubble-row assistant";
+  row.appendChild(makeAssistantHead());
   const bubble = document.createElement("div");
   bubble.className = "bubble skeleton";
   bubble.setAttribute("aria-hidden", "true");
-  row.append(makeAvatar(), bubble);
+  row.appendChild(bubble);
   els.thread.appendChild(row);
   scrollToBottom();
   return row;
@@ -341,6 +438,7 @@ function appendVideoCard(url, jobId) {
   showThread();
   const row = document.createElement("div");
   row.className = "bubble-row assistant";
+  row.appendChild(makeAssistantHead());
 
   const card = document.createElement("div");
   card.className = "video-card";
@@ -367,7 +465,7 @@ function appendVideoCard(url, jobId) {
 
   actions.append(download, meta);
   card.append(video, actions);
-  row.append(makeAvatar(), card);
+  row.appendChild(card);
   els.thread.appendChild(row);
   scrollToBottom();
 }
@@ -385,6 +483,7 @@ function setBusy(busy) {
   els.send.disabled = busy || !els.composer.value.trim();
   els.confirmBtn.disabled = busy;
   els.composer.disabled = busy;
+  els.composerPlus.disabled = busy;
 }
 
 function syncSendEnabled() {
@@ -397,12 +496,14 @@ function startNewChat() {
   state.phase = "idle";
   state.awaitingConfirm = false;
   state.activeJobId = null;
+  state.lastUserMessage = null;
   localStorage.removeItem(ACTIVE_KEY);
   els.thread.replaceChildren();
   els.thread.hidden = true;
   els.empty.hidden = false;
   setConfirm(false);
   setMobileSidebar(false);
+  setPlusMenu(false);
   renderSessionList();
   els.composer.focus();
 }
@@ -410,6 +511,7 @@ function startNewChat() {
 async function openSession(sessionId) {
   stopPoll();
   setMobileSidebar(false);
+  setPlusMenu(false);
   try {
     const res = await fetch(`/v1/sessions/${encodeURIComponent(sessionId)}`);
     const data = await res.json();
@@ -430,6 +532,8 @@ async function openSession(sessionId) {
       for (const message of messages) {
         appendBubble(message.role === "user" ? "user" : "assistant", message.content);
       }
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      state.lastUserMessage = lastUser?.content || null;
     }
     setConfirm(state.phase === "awaiting_confirm", data.chat?.draft?.summary || null);
     if (data.chat?.activeJobId && state.phase === "running") {
@@ -466,6 +570,7 @@ async function refreshHealth() {
 
 async function sendMessage(message) {
   setBusy(true);
+  state.lastUserMessage = message;
   appendBubble("user", message);
   const skeleton = appendSkeleton();
   try {
@@ -532,6 +637,7 @@ async function confirmJob() {
 }
 
 function stopPoll() {
+  state.pollGeneration += 1;
   if (state.pollTimer) {
     clearInterval(state.pollTimer);
     state.pollTimer = null;
@@ -539,6 +645,8 @@ function stopPoll() {
 }
 
 function watchJob(jobId) {
+  stopPoll();
+  const generation = state.pollGeneration;
   state.activeJobId = jobId;
   appendBubble("assistant", t("queued"), {
     progress: true,
@@ -548,11 +656,14 @@ function watchJob(jobId) {
     progress: true,
     meta: jobId,
   });
-  stopPoll();
-  state.pollTimer = setInterval(async () => {
+
+  async function poll() {
+    if (generation !== state.pollGeneration) return;
     try {
       const res = await fetch(`/v1/jobs/${encodeURIComponent(jobId)}`);
+      if (generation !== state.pollGeneration) return;
       const job = await res.json();
+      if (generation !== state.pollGeneration) return;
       if (!res.ok) {
         status.bubble.textContent = job.error || t("jobMissing");
         status.bubble.classList.add("error");
@@ -577,9 +688,14 @@ function watchJob(jobId) {
         appendBubble("assistant", job.error || t("jobFailed"), { error: true });
       }
     } catch (err) {
+      if (generation !== state.pollGeneration) return;
       status.bubble.textContent = err instanceof Error ? err.message : String(err);
       status.bubble.classList.add("error");
     }
+  }
+
+  state.pollTimer = setInterval(() => {
+    void poll();
   }, 1500);
 }
 
@@ -595,6 +711,7 @@ els.form.addEventListener("submit", (event) => {
   els.composer.value = "";
   autoGrowComposer();
   syncSendEnabled();
+  setPlusMenu(false);
   void sendMessage(message);
 });
 
@@ -632,6 +749,45 @@ els.sidebarCollapse.addEventListener("click", () => {
 
 els.langToggle.addEventListener("click", () => {
   setLang(state.lang === "zh" ? "en" : "zh");
+});
+
+els.historySearch.addEventListener("input", () => {
+  state.historyQuery = els.historySearch.value || "";
+  renderSessionList();
+});
+
+els.composerPlus.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setPlusMenu(!state.plusOpen);
+});
+
+els.plusNew.addEventListener("click", () => {
+  setPlusMenu(false);
+  startNewChat();
+});
+
+els.plusLang.addEventListener("click", () => {
+  setPlusMenu(false);
+  setLang(state.lang === "zh" ? "en" : "zh");
+});
+
+document.addEventListener("click", (event) => {
+  if (!state.plusOpen) return;
+  const target = event.target;
+  if (
+    target instanceof Node &&
+    (els.plusMenu.contains(target) || els.composerPlus.contains(target))
+  ) {
+    return;
+  }
+  setPlusMenu(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setPlusMenu(false);
+    setMobileSidebar(false);
+  }
 });
 
 setCollapsed(localStorage.getItem("lioran.sidebarCollapsed") === "1");

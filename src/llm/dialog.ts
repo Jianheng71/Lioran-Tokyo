@@ -36,7 +36,7 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
   if (session.chat.phase === "awaiting_confirm" && affirms && session.chat.draft.mode) {
     const templateId = resolveTemplate(session, message, session.chat.draft.templateId);
     return {
-      reply: `Understood. Starting with the ${templateId} template now.`,
+      reply: "Understood. Starting the official product-promo template now.",
       status: "confirmed",
       understood: {
         mode: session.chat.draft.mode === "revise" ? "revise" : "new_from_url",
@@ -51,7 +51,7 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
   if (url) {
     const templateId = resolveTemplate(session, message, named);
     return {
-      reply: `I read this as a new promo from that product page using ${templateId}. On-screen copy will follow the page language. Reply confirm when this matches what you want, or tell me what to change first.`,
+      reply: "I read this as a new promo from that public page. On-screen copy will follow the page language. Missing fields will be filled reasonably. Reply confirm when this matches what you want, or tell me what to change first.",
       status: "ready_to_confirm",
       understood: { mode: "new_from_url", url, instruction: null, templateId },
       questions: [],
@@ -66,7 +66,7 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
     if (looksLikeRevise && message.trim().length > 0) {
       const templateId = resolveTemplate(session, message, named);
       return {
-        reply: `I will revise the last video from your note without recrawling the page, using ${templateId}. Reply confirm to render a new file, or clarify the change.`,
+        reply: "I will revise the last video from your note without recrawling the page. Reply confirm to render a new file, or clarify the change.",
         status: "ready_to_confirm",
         understood: { mode: "revise", url: null, instruction: message.trim(), templateId },
         questions: [],
@@ -80,13 +80,13 @@ function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
 
   return {
     reply: session.lastVideoSpec
-      ? "Tell me what to change in the last video, or paste a new product page link. You may name a template: product-promo, cinematic-product, kinetic-typo, brand-story, or social-ad."
-      : "Paste a public product page link, and say anything you need about price, tone, language, or template. I will confirm before starting.",
+      ? "Tell me what to change in the last video, or paste a new public page link."
+      : "Paste any public page link you have the right to use, and say anything you need about tone or language. I will confirm before starting.",
     status: "need_clarification",
     understood: { mode: "unclear", url: null, instruction: null, templateId: named },
     questions: session.lastVideoSpec
       ? ["What should change in the last promo?"]
-      : ["Which public product page should I use?"],
+      : ["Which public page should I use?"],
   };
 }
 
@@ -102,13 +102,7 @@ export async function understandMessage(
     phase: session.chat.phase,
     draft: session.chat.draft,
     recent: session.chat.messages.slice(-6),
-    templates: [
-      "product-promo",
-      "cinematic-product",
-      "kinetic-typo",
-      "brand-story",
-      "social-ad",
-    ],
+    templates: ["product-promo"],
   };
 
   try {
