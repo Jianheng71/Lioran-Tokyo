@@ -26,7 +26,11 @@ async function pump(): Promise<void> {
   }
 }
 
-export function enqueueUrlJob(opts: { url: string; sessionId?: string }): JobRecord {
+export function enqueueUrlJob(opts: {
+  url: string;
+  sessionId?: string;
+  templateId?: JobRecord["templateId"];
+}): JobRecord {
   const session = getOrCreateSession(opts.sessionId);
   const now = new Date().toISOString();
   const job: JobRecord = {
@@ -40,6 +44,7 @@ export function enqueueUrlJob(opts: { url: string; sessionId?: string }): JobRec
     updatedAt: now,
     kind: "url",
     url: opts.url,
+    templateId: opts.templateId || session.chat.draft.templateId || undefined,
   };
   saveJob(job);
   session.chat.phase = "running";
@@ -53,6 +58,7 @@ export function enqueueUrlJob(opts: { url: string; sessionId?: string }): JobRec
 export function enqueueInstructionJob(opts: {
   sessionId: string;
   instruction: string;
+  templateId?: JobRecord["templateId"];
 }): JobRecord {
   const session = getOrCreateSession(opts.sessionId);
   if (!session.lastVideoSpec) {
@@ -74,6 +80,7 @@ export function enqueueInstructionJob(opts: {
     updatedAt: now,
     kind: "instruction",
     instruction: opts.instruction,
+    templateId: opts.templateId || session.chat.draft.templateId || undefined,
   };
   saveJob(job);
   session.chat.phase = "running";

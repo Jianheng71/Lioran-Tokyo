@@ -88,6 +88,18 @@
         }
       }
     },
+    "templateId": {
+      "type": "string",
+      "enum": [
+        "product-promo",
+        "cinematic-product",
+        "kinetic-typo",
+        "brand-story",
+        "social-ad"
+      ],
+      "default": "product-promo",
+      "description": "Which fillable HyperFrames template to render. Default remains official product-promo."
+    },
     "assets": {
       "type": "object",
       "additionalProperties": false,

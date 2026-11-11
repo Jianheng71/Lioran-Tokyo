@@ -4,7 +4,8 @@ data/**
 storage/
 .render.lock
 .browser.lock
-templates/product-promo/.hyperframes/
+templates/*/.hyperframes/
+templates/**/.hyperframes/
 *.log
 .env
 uploads/

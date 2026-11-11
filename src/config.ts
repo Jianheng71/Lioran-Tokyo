@@ -25,7 +25,9 @@ export const config = {
   jobRetention: intEnv("JOB_RETENTION", 20),
   chromePath: process.env.CHROME_PATH || "",
   paths: {
+    /** Default / official template (product-promo). Prefer templateDir(id) for others. */
     templates: path.join(root, "templates", "product-promo"),
+    templatesRoot: path.join(root, "templates"),
     fixtures: path.join(root, "fixtures"),
     data: path.join(root, "data"),
     jobs: path.join(root, "data", "jobs"),

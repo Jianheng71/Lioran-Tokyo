@@ -1,8 +1,9 @@
-import type { ProductFacts, VideoSpec } from "../schemas.js";
+import type { ProductFacts, TemplateId, VideoSpec } from "../schemas.js";
 import { VideoSpecSchema } from "../schemas.js";
 import { HermesUnavailableError, extractJsonObject, hermesChatJson } from "./hermes.js";
 import { mergeSpecDefaults, videoSpecFromFacts } from "./fallback.js";
 import { VIDEO_SPEC_SYSTEM, factsToSpecUserPrompt, reviseSpecUserPrompt } from "./prompts.js";
+import { DEFAULT_TEMPLATE_ID, inferTemplateId, chooseTemplateId } from "../templates/catalog.js";
 
 function parseSpec(raw: string, prev?: VideoSpec): VideoSpec {
   const parsed = extractJsonObject(raw);
@@ -37,19 +38,26 @@ async function generateWithRetry(user: string, prev?: VideoSpec): Promise<VideoS
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-export async function generateVideoSpecFromFacts(facts: ProductFacts): Promise<{
+export async function generateVideoSpecFromFacts(
+  facts: ProductFacts,
+  preferredTemplateId?: TemplateId | null,
+): Promise<{
   spec: VideoSpec;
   source: "hermes" | "fallback";
 }> {
+  const templateId =
+    preferredTemplateId ||
+    chooseTemplateId({ named: null, message: `${facts.title} ${facts.description}` }) ||
+    DEFAULT_TEMPLATE_ID;
   try {
-    const spec = await generateWithRetry(factsToSpecUserPrompt(facts));
+    const spec = await generateWithRetry(factsToSpecUserPrompt(facts, templateId));
+    if (!spec.templateId) spec.templateId = templateId;
     return { spec, source: "hermes" };
   } catch (err) {
     if (err instanceof HermesUnavailableError) {
-      return { spec: videoSpecFromFacts(facts), source: "fallback" };
+      return { spec: videoSpecFromFacts(facts, templateId), source: "fallback" };
     }
-    // Validation exhausted → template sentences from Facts
-    return { spec: videoSpecFromFacts(facts), source: "fallback" };
+    return { spec: videoSpecFromFacts(facts, templateId), source: "fallback" };
   }
 }
 
@@ -63,30 +71,51 @@ export async function reviseVideoSpec(
     return { spec, source: "hermes" };
   } catch (err) {
     if (err instanceof HermesUnavailableError) {
-      // Lightweight local revise for common price edits when Hermes is down
       const local = localRevise(prev, instruction);
       if (local) return { spec: local, source: "fallback" };
-      if (facts) return { spec: videoSpecFromFacts(facts), source: "fallback" };
+      if (facts) {
+        return {
+          spec: videoSpecFromFacts(facts, prev.templateId || DEFAULT_TEMPLATE_ID),
+          source: "fallback",
+        };
+      }
       throw err;
     }
     const local = localRevise(prev, instruction);
     if (local) return { spec: local, source: "fallback" };
-    if (facts) return { spec: videoSpecFromFacts(facts), source: "fallback" };
+    if (facts) {
+      return {
+        spec: videoSpecFromFacts(facts, prev.templateId || DEFAULT_TEMPLATE_ID),
+        source: "fallback",
+      };
+    }
     return { spec: prev, source: "fallback" };
   }
 }
 
 function localRevise(prev: VideoSpec, instruction: string): VideoSpec | null {
+  // Only switch templates when the user explicitly names one.
+  const named = inferTemplateId(instruction);
+  let next: VideoSpec = prev;
+  let changed = false;
+
+  if (named && named !== prev.templateId) {
+    next = VideoSpecSchema.parse({ ...next, templateId: named });
+    changed = true;
+  }
+
   const priceMatch = instruction.match(
     /(?:价格|價錢|price|yen|jpy|¥|￥|\$)\s*(?:改成|改为|換成|换成|to|=|:)?\s*([¥￥$€£]?\s?\d+[\d,.]*)/i,
   );
   if (priceMatch?.[1]) {
     const price = priceMatch[1].replace(/\s+/g, "");
-    return VideoSpecSchema.parse({ ...prev, price });
+    next = VideoSpecSchema.parse({ ...next, price });
+    changed = true;
   }
   const ctaMatch = instruction.match(/(?:cta|按钮|按鈕)\s*(?:改成|改为|換成|换成|to|=|:)?\s*[「"']?([^」"']+)[」"']?/i);
   if (ctaMatch?.[1]) {
-    return VideoSpecSchema.parse({ ...prev, cta: ctaMatch[1].trim().slice(0, 24) });
+    next = VideoSpecSchema.parse({ ...next, cta: ctaMatch[1].trim().slice(0, 24) });
+    changed = true;
   }
-  return null;
+  return changed ? next : null;
 }

@@ -17,6 +17,7 @@
     "background": "#0a0a0f",
     "accent": "#C41E3A"
   },
+  "templateId": "product-promo",
   "assets": {
     "logo": "assets/logo.png",
     "productImage": "assets/product.png"

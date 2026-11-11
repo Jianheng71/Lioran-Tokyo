@@ -1,0 +1,18 @@
+hyperframes-motion (cinematic-product, kinetic-typo, brand-story, social-ad
+and their declared CSS/JS dependencies)
+Copyright (c) 2026 2 Boys From Town (2BFT) — MIT licence (see LICENSE).
+https://github.com/2boysfromtown/hyperframes-motion
+Built by 2BFT, Two Boys From Town — https://2bft.in
+
+The above copyright notice and the MIT permission notice must be included
+in all copies or substantial portions of the Software.
+
+Third-party material:
+
+1. GSAP 3.x (free core) by Webflow is loaded at render time from jsDelivr
+   (`https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js`). It is not
+   copied into this tree and keeps its own licence: https://gsap.com/licensing/
+
+2. The templates name Inter in `font-family` (social-ad uses system-ui) but
+   do not ship a font file or a Google Fonts stylesheet; the browser falls
+   back to system fonts.

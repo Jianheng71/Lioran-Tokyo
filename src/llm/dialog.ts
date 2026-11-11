@@ -1,7 +1,8 @@
-import type { DialogPlan, SessionRecord } from "../schemas.js";
+import type { DialogPlan, SessionRecord, TemplateId } from "../schemas.js";
 import { DialogPlanSchema } from "../schemas.js";
 import { HermesUnavailableError, extractJsonObject, hermesChatJson } from "./hermes.js";
 import { DIALOG_SYSTEM } from "./prompts.js";
+import { chooseTemplateId, inferTemplateId } from "../templates/catalog.js";
 
 const URL_RE = /https?:\/\/[^\s<>"')]+/i;
 
@@ -11,62 +12,78 @@ export function extractUrl(text: string): string | null {
   return m[0].replace(/[.,;:!?)]+$/, "");
 }
 
+function resolveTemplate(
+  session: SessionRecord,
+  message: string,
+  fromModel: TemplateId | null | undefined,
+): TemplateId {
+  return chooseTemplateId({
+    named: fromModel || inferTemplateId(message) || session.chat.draft.templateId,
+    message,
+    instruction: session.chat.draft.instruction,
+  });
+}
+
 function ruleBasedDialog(session: SessionRecord, message: string): DialogPlan {
   const url = extractUrl(message);
   const lower = message.toLowerCase();
+  const named = inferTemplateId(message);
   const affirms =
     /^(y|yes|ok|okay|sure|confirm|confirmed|do it|go ahead|开始|開始|确认|確認|可以|行|好的|嗯)$/i.test(
       message.trim(),
     ) || /(确认|確認|开始做|開始做|就这样|就這樣|没问题|沒問題)/.test(message);
 
   if (session.chat.phase === "awaiting_confirm" && affirms && session.chat.draft.mode) {
+    const templateId = resolveTemplate(session, message, session.chat.draft.templateId);
     return {
-      reply: "Understood. Starting the 15 second promo now.",
+      reply: `Understood. Starting with the ${templateId} template now.`,
       status: "confirmed",
       understood: {
         mode: session.chat.draft.mode === "revise" ? "revise" : "new_from_url",
         url: session.chat.draft.url,
         instruction: session.chat.draft.instruction,
+        templateId,
       },
       questions: [],
     };
   }
 
   if (url) {
+    const templateId = resolveTemplate(session, message, named);
     return {
-      reply:
-        "I read this as a new promo from that product page. On-screen copy will follow the page language. Reply confirm when this matches what you want, or tell me what to change first.",
+      reply: `I read this as a new promo from that product page using ${templateId}. On-screen copy will follow the page language. Reply confirm when this matches what you want, or tell me what to change first.`,
       status: "ready_to_confirm",
-      understood: { mode: "new_from_url", url, instruction: null },
+      understood: { mode: "new_from_url", url, instruction: null, templateId },
       questions: [],
     };
   }
 
   if (session.lastVideoSpec) {
     const looksLikeRevise =
-      /(改|换|換|价格|價錢|price|cta|标题|標題|headline|caption|字幕|tagline)/i.test(message) ||
-      message.trim().length > 0;
+      /(改|换|換|价格|價錢|price|cta|标题|標題|headline|caption|字幕|tagline|模版|模板|template)/i.test(
+        message,
+      ) || message.trim().length > 0;
     if (looksLikeRevise && message.trim().length > 0) {
+      const templateId = resolveTemplate(session, message, named);
       return {
-        reply:
-          "I will revise the last video from your note without recrawling the page. Reply confirm to render a new 15 second file, or clarify the change.",
+        reply: `I will revise the last video from your note without recrawling the page, using ${templateId}. Reply confirm to render a new file, or clarify the change.`,
         status: "ready_to_confirm",
-        understood: { mode: "revise", url: null, instruction: message.trim() },
+        understood: { mode: "revise", url: null, instruction: message.trim(), templateId },
         questions: [],
       };
     }
   }
 
   if (/hermes|model|ai/i.test(lower) && false) {
-    // unreachable placeholder to keep structure clear
+    // unreachable placeholder
   }
 
   return {
     reply: session.lastVideoSpec
-      ? "Tell me what to change in the last video, or paste a new product page link."
-      : "Paste a public product page link, and say anything you need about price, tone, or language. I will confirm before starting.",
+      ? "Tell me what to change in the last video, or paste a new product page link. You may name a template: product-promo, cinematic-product, kinetic-typo, brand-story, or social-ad."
+      : "Paste a public product page link, and say anything you need about price, tone, language, or template. I will confirm before starting.",
     status: "need_clarification",
-    understood: { mode: "unclear", url: null, instruction: null },
+    understood: { mode: "unclear", url: null, instruction: null, templateId: named },
     questions: session.lastVideoSpec
       ? ["What should change in the last promo?"]
       : ["Which public product page should I use?"],
@@ -81,9 +98,17 @@ export async function understandMessage(
     hasLastVideo: Boolean(session.lastVideoSpec),
     lastBrand: session.lastVideoSpec?.brand ?? null,
     lastPrice: session.lastVideoSpec?.price ?? null,
+    lastTemplateId: session.lastVideoSpec?.templateId ?? null,
     phase: session.chat.phase,
     draft: session.chat.draft,
     recent: session.chat.messages.slice(-6),
+    templates: [
+      "product-promo",
+      "cinematic-product",
+      "kinetic-typo",
+      "brand-story",
+      "social-ad",
+    ],
   };
 
   try {
@@ -93,7 +118,6 @@ export async function understandMessage(
       temperature: 0.1,
     });
     const parsed = DialogPlanSchema.parse(extractJsonObject(raw));
-    // Prefer extracting a URL from the user message if model dropped it
     if (!parsed.understood.url) {
       const url = extractUrl(message);
       if (url && parsed.understood.mode !== "revise") {
@@ -104,6 +128,12 @@ export async function understandMessage(
         }
       }
     }
+    const named = inferTemplateId(message);
+    parsed.understood.templateId = resolveTemplate(
+      session,
+      message,
+      parsed.understood.templateId || named,
+    );
     return { plan: parsed, source: "hermes" };
   } catch (err) {
     if (!(err instanceof HermesUnavailableError)) {

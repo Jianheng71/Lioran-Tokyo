@@ -1,0 +1,10 @@
+Fillable HyperFrames copy of hyperframes-motion `brand-story`
+Copyright (c) 2026 2 Boys From Town (2BFT) — MIT licence (see LICENSE).
+https://github.com/2boysfromtown/hyperframes-motion
+Upstream commit: 83cfdad9a4f2e6c370c8e3356401bdc705905f67
+
+Vendored for offline official hyperframes@0.9.32 render (no Google Fonts, no jsDelivr):
+- assets/gsap.min.js (GSAP free core; see https://gsap.com/licensing/)
+- assets/fonts/ Inter + Noto Sans SC (from the official product-promo vendor set)
+
+Unmodified originals: references/hyperframes-motion/
