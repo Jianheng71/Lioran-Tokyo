@@ -1,32 +1,48 @@
 import type { ProductFacts, VideoSpec } from "../schemas.js";
+import { formatDisplayPrice } from "../crawler/priceBrand.js";
 
-function clip(text: string, max: number): string {
+/**
+ * Fit text into an official short slot without mid-word / mid-CJK cuts and
+ * without an ellipsis that makes the product name unrecognizable.
+ * Prefer a natural boundary; if none, keep a complete prefix up to max.
+ */
+export function clipReadable(text: string, max: number): string {
   const t = text.replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
-  return `${t.slice(0, Math.max(0, max - 1)).trim()}…`;
+  const slice = t.slice(0, max);
+  const breakAt = Math.max(
+    slice.lastIndexOf(" "),
+    slice.lastIndexOf("·"),
+    slice.lastIndexOf("，"),
+    slice.lastIndexOf("。"),
+    slice.lastIndexOf("、"),
+    slice.lastIndexOf("："),
+    slice.lastIndexOf(":"),
+    slice.lastIndexOf("-"),
+    slice.lastIndexOf("/"),
+  );
+  if (breakAt >= Math.floor(max * 0.45)) {
+    return slice.slice(0, breakAt).trim();
+  }
+  // No ellipsis — keep a complete readable prefix inside the official max.
+  return slice.trim();
 }
 
-function formatPrice(facts: ProductFacts): string {
-  if (!facts.price) return "";
-  const cur = (facts.currency || "").toUpperCase();
-  if (cur === "CNY" || cur === "RMB" || facts.localeHint.startsWith("zh")) {
-    return facts.price.startsWith("¥") ? facts.price : `¥${facts.price}`;
+function sellingPoints(facts: ProductFacts): string[] {
+  const raw = `${facts.description || ""} ${facts.title || ""}`
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = raw
+    .split(/[。.!！？?\n|;；|/]/)
+    .map((s) => s.replace(/^[-•\s]+/, "").trim())
+    .filter((s) => s.length >= 4);
+  const uniq: string[] = [];
+  for (const p of parts) {
+    if (!uniq.some((u) => u.includes(p) || p.includes(u))) uniq.push(p);
+    if (uniq.length >= 6) break;
   }
-  if (cur === "JPY") {
-    return facts.price.startsWith("¥") || facts.price.startsWith("￥")
-      ? facts.price
-      : `¥${facts.price}`;
-  }
-  if (cur === "USD") {
-    return facts.price.startsWith("$") ? facts.price : `$${facts.price}`;
-  }
-  return facts.price;
-}
-
-function formatCompare(facts: ProductFacts): string {
-  if (!facts.compareAtPrice) return "";
-  const fake: ProductFacts = { ...facts, price: facts.compareAtPrice };
-  return formatPrice(fake);
+  if (!uniq.length && facts.title) uniq.push(facts.title);
+  return uniq;
 }
 
 /** Deterministic VideoSpec from ProductFacts when Hermes fails validation twice. */
@@ -35,34 +51,50 @@ export function videoSpecFromFacts(
   templateId: VideoSpec["templateId"] = "product-promo",
 ): VideoSpec {
   const zh = facts.localeHint.toLowerCase().startsWith("zh");
-  const title = clip(facts.title, 48);
-  const brand = clip(facts.brand || facts.urlHost, 40);
-  const desc = clip(facts.description || title, 42);
+  // Use official slot maxima (title 48 / captions 42). Do not hard-clip Chinese
+  // at ~22 into incomplete text — CSS wraps / tightens type on screen.
+  const brand = clipReadable(facts.brand || "Brand", 40);
+  const title = clipReadable(facts.title, 48);
+  const priceText = formatDisplayPrice(facts.price, facts.currency, facts.localeHint);
+  const compareText = formatDisplayPrice(
+    facts.compareAtPrice,
+    facts.currency,
+    facts.localeHint,
+  );
+  const points = sellingPoints(facts);
+  const p0 = points[0] || title;
+  const p1 = points[1] || points[0] || title;
+  const p2 = points[2] || points[1] || title;
 
-  const priceText = clip(formatPrice(facts), 24);
-  const captions: [string, string, string] = zh
-    ? [
-        clip(`${brand} · ${title}`, 22),
-        clip(desc || (priceText ? `参考价 ${priceText}` : "锁定要点，跟住节奏。"), 22),
-        clip(priceText ? "十五秒，把这一页说清楚。" : "十五秒，把这一页说清楚。", 22),
-      ]
-    : [
-        clip(`${brand}: ${title}`, 42),
-        clip(desc || (priceText ? `From ${priceText}` : "Key points, kept on beat."), 42),
-        clip("Fifteen seconds. Clear and done.", 42),
-      ];
+  const headline = clipReadable(p0, 48);
+  const captions: [string, string, string] = [
+    clipReadable(title, 42),
+    clipReadable(p1, 42),
+    clipReadable(priceText ? `${priceText}` : p2, 42),
+  ];
+  // Ensure captions are product-derived, never the banned generic fillers
+  const banned =
+    /一起看清这一页|十五秒，把这一页说清楚|本地短片，跟着页面语言|See this page clearly|Fifteen seconds\. Clear and done|Local short film, page language first/i;
+  for (let i = 0; i < 3; i++) {
+    if (!captions[i] || banned.test(captions[i])) {
+      captions[i] = clipReadable([title, brand, p0, p1, p2][i] || title, 42);
+    }
+  }
+
+  const cta = zh ? "了解详情" : "Learn more";
+  const tagline = clipReadable(p2 || p1 || title, 48);
 
   return {
     locale: facts.localeHint.slice(0, 8),
     brand,
     title,
-    price: priceText,
-    compareAtPrice: clip(formatCompare(facts), 24),
-    headline: clip(zh ? "一起看清这一页" : "See this page clearly", 48),
+    price: clipReadable(priceText, 24),
+    compareAtPrice: clipReadable(compareText, 24),
+    headline: banned.test(headline) ? clipReadable(title, 48) : headline,
     captions,
-    cta: zh ? "立即了解" : "Learn more",
-    tagline: clip(zh ? "本地短片，跟着页面语言。" : "Local short film, page language first.", 48),
-    urlHost: clip(facts.urlHost, 40),
+    cta,
+    tagline: banned.test(tagline) ? clipReadable(title, 48) : tagline,
+    urlHost: clipReadable(facts.urlHost, 40),
     theme: {
       background: "#0a0a0f",
       accent: "#C41E3A",

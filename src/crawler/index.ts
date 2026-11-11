@@ -7,6 +7,12 @@ import { withBrowserLock } from "../locks.js";
 import { ProductFactsSchema, type ProductFacts } from "../schemas.js";
 import { assertHttpUrl } from "../urls.js";
 import { EXTRACT_PAGE_FIELDS } from "./extract-page-fields.js";
+import {
+  isRejectImageUrl,
+  isUsableHeroFile,
+  preferLargerImageUrl,
+} from "./imageQuality.js";
+import { detectCurrency, resolveProductBrand } from "./priceBrand.js";
 
 function hostOf(url: string): string {
   try {
@@ -33,9 +39,11 @@ function inferLocale(opts: {
 
 async function downloadImage(url: string, destDir: string, index: number): Promise<string | null> {
   try {
+    if (isRejectImageUrl(url)) return null;
+    const fetchUrl = preferLargerImageUrl(url);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);
-    const res = await fetch(url, {
+    const res = await fetch(fetchUrl, {
       signal: controller.signal,
       headers: { "user-agent": "LioranTokyoLocalBot/1.0" },
       redirect: "follow",
@@ -44,14 +52,18 @@ async function downloadImage(url: string, destDir: string, index: number): Promi
     if (!res.ok) return null;
     const ctype = res.headers.get("content-type") || "";
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length < 64) return null;
+    if (buf.length < 4_000) return null;
     let ext = ".jpg";
-    if (ctype.includes("png") || url.includes(".png")) ext = ".png";
-    else if (ctype.includes("webp") || url.includes(".webp")) ext = ".webp";
+    if (ctype.includes("png") || fetchUrl.includes(".png")) ext = ".png";
+    else if (ctype.includes("webp") || fetchUrl.includes(".webp")) ext = ".webp";
     else if (ctype.includes("gif")) ext = ".gif";
-    const name = `img_${index}_${createHash("sha1").update(url).digest("hex").slice(0, 8)}${ext}`;
+    const name = `img_${index}_${createHash("sha1").update(fetchUrl).digest("hex").slice(0, 8)}${ext}`;
     const dest = path.join(destDir, name);
     fs.writeFileSync(dest, buf);
+    if (!isUsableHeroFile(dest)) {
+      fs.unlinkSync(dest);
+      return null;
+    }
     return dest;
   } catch {
     return null;
@@ -69,6 +81,7 @@ function stagePlaceholderImage(destDir: string): string {
 type Extracted = {
   title: string | null;
   brand: string | null;
+  ogSiteName?: string | null;
   description: string | null;
   price: string | null;
   currency: string | null;
@@ -151,29 +164,50 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
   const host = hostOf(url);
   const title =
     (extracted.title || "").trim() ||
-    (extracted.description || "").trim().slice(0, 48) ||
+    (extracted.description || "").trim().slice(0, 80) ||
     host;
-  const brand = (extracted.brand || "").trim() || host;
-  const description = (extracted.description || extracted.textSample || title).slice(0, 800);
+  const description = (extracted.description || extracted.textSample || title).slice(0, 1200);
+  const localeHint = inferLocale({
+    htmlLang: extracted.htmlLang,
+    ogLocale: extracted.ogLocale,
+    textSample: `${title} ${description} ${extracted.textSample}`,
+  });
+  const brand = resolveProductBrand({
+    brand: extracted.brand,
+    title,
+    urlHost: host,
+    ogSiteName: extracted.ogSiteName ?? null,
+  });
+  const currency = detectCurrency(extracted.price, extracted.currency, localeHint);
 
   const localImages: string[] = [];
+  const seen = new Set<string>();
   for (let i = 0; i < extracted.images.length && localImages.length < 4; i++) {
-    const local = await downloadImage(extracted.images[i], assetDir, i);
+    const src = extracted.images[i];
+    if (!src || isRejectImageUrl(src) || seen.has(src)) continue;
+    seen.add(src);
+    const local = await downloadImage(src, assetDir, i);
     if (local) localImages.push(local);
   }
 
+  // Favicons / site UI icons are never a usable brand mark. Only keep a logo
+  // file if it independently passes hero-size quality (genuine brand artwork).
   let localLogo: string | null = null;
-  if (extracted.logo) {
-    localLogo = await downloadImage(extracted.logo, assetDir, 90);
+  if (extracted.logo && !isRejectImageUrl(extracted.logo)) {
+    const maybe = await downloadImage(extracted.logo, assetDir, 90);
+    if (maybe && isUsableHeroFile(maybe)) localLogo = maybe;
+    else if (maybe) {
+      try {
+        fs.unlinkSync(maybe);
+      } catch {
+        // ignore
+      }
+    }
   }
 
-  // Soft-fill: incomplete pages still get a usable brandMark image for product-promo.
+  // Soft-fill: incomplete pages still get a usable product hero for brandMark.
   if (localImages.length === 0) {
-    if (localLogo) {
-      localImages.push(localLogo);
-    } else {
-      localImages.push(stagePlaceholderImage(assetDir));
-    }
+    localImages.push(stagePlaceholderImage(assetDir));
   }
 
   return ProductFactsSchema.parse({
@@ -181,16 +215,14 @@ export async function crawlProductPage(url: string, assetDir: string): Promise<P
     title,
     brand,
     price: extracted.price,
-    currency: extracted.currency,
+    currency,
     compareAtPrice: extracted.compareAtPrice,
     description,
     images: localImages,
     urlHost: host,
-    localeHint: inferLocale({
-      htmlLang: extracted.htmlLang,
-      ogLocale: extracted.ogLocale,
-      textSample: `${title} ${description} ${extracted.textSample}`,
-    }),
+    localeHint,
+    // Prefer null logo so fill path uses product hero for brandMark unless a
+    // genuine large brand mark was found.
     logo: localLogo,
   });
 }

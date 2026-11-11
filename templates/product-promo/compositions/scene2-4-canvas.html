@@ -8,34 +8,42 @@
     <div class="canvas">
       <div class="dot-grid"></div>
 
-      <!-- Web Frame -->
+      <!-- Product stage (keeps .web-frame / .ui-content selectors for locked GSAP) -->
       <div class="web-frame">
         <div class="ui-content">
           <div class="nav-bar">
-            <div class="nav-logo"></div>
-            <div class="nav-links">
+            <div class="nav-brand" data-var-text="brand">Brand</div>
+            <div class="nav-links" aria-hidden="true">
               <div class="nav-link"></div>
               <div class="nav-link"></div>
               <div class="nav-link"></div>
             </div>
           </div>
           <div class="hero-section">
+            <div class="product-hero">
+              <!-- Mid hero is always the staged product asset, not brandMark -->
+              <img
+                class="product-hero-img"
+                src="assets/product.png"
+                alt=""
+              />
+            </div>
             <h1 class="hero-heading" data-var-text="headline">Headline</h1>
             <div class="price-row">
               <span class="price" data-var-text="price"></span>
               <span class="compare" data-var-text="compareAtPrice"></span>
             </div>
             <div class="subtitle-lines">
-              <div class="subtitle-line"></div>
-              <div class="subtitle-line"></div>
+              <div class="subtitle-line" data-var-text="caption1"></div>
+              <div class="subtitle-line" data-var-text="caption2"></div>
             </div>
             <div class="cta-button" data-var-text="cta"></div>
           </div>
         </div>
-        <!-- Dimension Labels -->
+        <!-- Dimension Labels (timeline targets; visually hidden) -->
         <div class="dimension-label width-label" data-layout-ignore data-layout-allow-overflow>1440</div>
         <div class="dimension-label height-label" data-layout-ignore data-layout-allow-overflow>900</div>
-        <!-- Selection Handles (Engineer) -->
+        <!-- Selection Handles (timeline targets; visually hidden) -->
         <div class="selection-handles">
           <div class="handle tl"></div>
           <div class="handle tr"></div>
@@ -166,7 +174,7 @@
 }
 
       [data-composition-id="scene2-4-canvas"] {
-        background-color: #1e1e1e;
+        background-color: var(--background, #0a0a0f);
         font-family: "Noto Sans SC", "Inter", sans-serif;
         color: white;
         overflow: hidden;
@@ -188,59 +196,66 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: radial-gradient(#2c2c2c 1px, transparent 1px);
-        background-size: 24px 24px;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        background-size: 28px 28px;
+        opacity: 0.7;
       }
 
+      /* Product stage panel — not a browser / Figma web-frame chrome */
       .web-frame {
         position: absolute;
         top: 50%;
         left: 50%;
         width: 1440px;
         height: 900px;
-        background: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        background: transparent;
+        border: none;
+        box-shadow: none;
         overflow: hidden;
         opacity: 0;
+        border-radius: 0;
       }
 
       .ui-content {
         width: 100%;
         height: 100%;
-        background: white;
+        background: linear-gradient(160deg, #12121a 0%, #0a0a0f 55%, #141018 100%);
         display: flex;
         flex-direction: column;
         opacity: 0;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .nav-bar {
-        height: 80px;
-        padding: 0 60px;
+        height: auto;
+        min-height: 0;
+        padding: 48px 72px 0;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid #e6e6e6;
+        justify-content: center;
+        border-bottom: none;
       }
 
-      .nav-logo {
-        width: 40px;
-        height: 40px;
-        background: var(--accent, #C41E3A);
-        border-radius: 8px;
-        opacity: 0.8;
+      .nav-brand {
+        font-size: 36px;
+        font-weight: 700;
+        color: #f5f5f7;
+        letter-spacing: -0.02em;
+        max-width: 90%;
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.25;
       }
 
       .nav-links {
-        display: flex;
-        gap: 32px;
+        display: none !important;
       }
 
       .nav-link {
-        width: 80px;
-        height: 12px;
-        background: #cccccc;
-        border-radius: 6px;
+        display: none;
       }
 
       .hero-section {
@@ -249,17 +264,42 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding-bottom: 100px;
+        padding: 24px 72px 64px;
+        gap: 12px;
+      }
+
+      .product-hero {
+        width: 560px;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        opacity: 1;
+      }
+
+      .product-hero-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
+        filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
       }
 
       .hero-heading {
-        font-size: 84px;
+        font-size: clamp(28px, 4.2vw, 48px);
         font-weight: 800;
-        color: #1e1e1e;
-        margin-bottom: 24px;
+        color: #f5f5f7;
+        margin-bottom: 8px;
         opacity: 0;
         letter-spacing: -0.02em;
         transform-origin: center;
+        text-align: center;
+        max-width: 92%;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
       
@@ -268,17 +308,17 @@
         align-items: baseline;
         justify-content: center;
         gap: 16px;
-        margin-bottom: 20px;
+        margin-bottom: 8px;
         min-height: 1em;
       }
       .price {
         font-size: 40px;
         font-weight: 700;
-        color: #1e1e1e;
+        color: #f5f5f7;
       }
       .compare {
         font-size: 28px;
-        color: #888;
+        color: rgba(255, 255, 255, 0.45);
         text-decoration: line-through;
       }
       .compare:empty {
@@ -288,17 +328,31 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 48px;
+        gap: 10px;
+        margin-bottom: 28px;
         transform-origin: center;
+        max-width: 88%;
       }
 
       .subtitle-line {
-        width: 400px;
-        height: 16px;
-        background: #e6e6e6;
-        border-radius: 8px;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        height: auto;
+        background: transparent;
+        border-radius: 0;
         opacity: 0;
+        color: rgba(245, 245, 247, 0.78);
+        font-size: clamp(18px, 2vw, 26px);
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .subtitle-line:empty {
+        display: none;
       }
 
       .cta-button {
@@ -367,6 +421,18 @@
       .handle.br {
         bottom: -6px;
         right: -6px;
+      }
+
+      /* Keep timeline targets; hide Figma / browser-demo chrome visually. */
+      .assets-panel,
+      .dimension-label,
+      .selection-handles,
+      .dragged-card,
+      .stamped-cards,
+      .comment-container,
+      .cursor {
+        visibility: hidden !important;
+        pointer-events: none !important;
       }
 
       .assets-panel {
@@ -618,11 +684,13 @@
           9.1,
         );
 
-        // Reformat UI as card is dragged in
-        tl.to(".hero-section", { y: -150, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".hero-heading", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".subtitle-lines", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
-        tl.to(".cta-button", { scale: 0.8, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        // Old card-drag "reformat" shifted/shrunk the stage into a demo zoom.
+        // Keep the same selectors + timing, but hold a stable product showcase
+        // (no translate-up / scale-down) so the mid hero stays recognizable.
+        tl.to(".hero-section", { y: 0, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".hero-heading", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".subtitle-lines", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
+        tl.to(".cta-button", { scale: 1, duration: 0.8, ease: "power3.inOut" }, 9.1);
 
         // Stamping into Grid/Row
         tl.to(".stamped-cards", { y: 200, duration: 0.1 }, 9.1); // Position the container

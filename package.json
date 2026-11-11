@@ -16,7 +16,7 @@
     "render:fixture:brand": "TEMPLATE=brand-story node scripts/render-fixture.js",
     "render:fixture:social": "TEMPLATE=social-ad node scripts/render-fixture.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/safety.test.ts"
+    "test": "node --import tsx --test src/safety.test.ts src/crawler/fillQuality.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",

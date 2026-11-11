@@ -17,6 +17,17 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
   const text = (sel) =>
     document.querySelector(sel)?.innerText?.trim() || null;
 
+  // Host-agnostic: reject favicons/sprites/site UI/tiny thumbs by URL signals.
+  // Amazon/Shopify size tokens are optional CDN patterns among several.
+  const rejectUrl = (u) => {
+    if (!u) return true;
+    return /favicon|apple-touch-icon|sprite|spritesheet|icon[_-]?set|transparent[_-]?pixel|spacer\\.|1x1|pixel\\.gif|blank\\.|loading[_-]?spinner|badge|cart[_-]?icon|prime[_-]?logo|smile[_-]?(?:logo|icon)|nav[_-]?logo|\\/icons?\\/|\\/thumbnails?\\/|\\/thumbs?\\//i.test(
+      u,
+    ) || /[._-](?:SS|SX|SY|US|UX|UY|AC_US|AC_UL|AC_SX|AC_SY|_SL)(?:20|32|40|50|60|70|75|80|90|100)(?:[._,]|$)|[._-](?:20|32|40|50|60|70|75|80|90|100)x(?:20|32|40|50|60|70|75|80|90|100)(?:[._@-]|$)|\\/(?:20|32|40|50|60|70|75|80|90|100)x(?:20|32|40|50|60|70|75|80|90|100)(?:\\/|$)|[?&](?:w|width|h|height|s|size)=(?:20|32|40|50|60|70|75|80|90|100)(?:&|$)/i.test(
+      u,
+    );
+  };
+
   const ogTitle = meta('meta[property="og:title"]') || meta('meta[name="twitter:title"]');
   const ogSite = meta('meta[property="og:site_name"]');
   const ogDesc =
@@ -65,10 +76,11 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
 
   const product = products[0] || null;
   const pageNode = pages[0] || null;
-  let brand = ogSite || null;
+  // Never seed brand from marketplace site_name (e.g. Amazon)
+  let brand = null;
   let price = null;
   let currency = null;
-  const compareAtPrice = null;
+  let compareAtPrice = null;
   let ldTitle = null;
   let ldDesc = null;
   const ldImages = [];
@@ -96,6 +108,11 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
       const o = offer;
       if (o.price != null) price = String(o.price);
       if (typeof o.priceCurrency === "string") currency = o.priceCurrency;
+      if (o.highPrice != null && !price) price = String(o.highPrice);
+      if (o.lowPrice != null && o.highPrice != null) {
+        compareAtPrice = String(o.highPrice);
+        price = String(o.lowPrice);
+      }
     }
     takeImages(product.image);
   }
@@ -104,44 +121,122 @@ export const EXTRACT_PAGE_FIELDS = `(() => {
     if (!ldTitle && typeof pageNode.name === "string") ldTitle = pageNode.name;
     if (!ldTitle && typeof pageNode.headline === "string") ldTitle = pageNode.headline;
     if (!ldDesc && typeof pageNode.description === "string") ldDesc = pageNode.description;
-    if (!brand && typeof pageNode.name === "string" && !product) brand = pageNode.name;
     takeImages(pageNode.image);
-    takeImages(pageNode.logo);
+  }
+
+  // Amazon-style brand row
+  if (!brand) {
+    brand =
+      text("#brand") ||
+      text("a#bylineInfo") ||
+      text('[data-brand]') ||
+      text('.po-brand .a-span9') ||
+      text('[itemprop="brand"]') ||
+      null;
   }
 
   const visibleTitle =
-    text("h1") || text('[itemprop="name"]') || document.title?.trim() || null;
+    text("#productTitle") ||
+    text("h1#title") ||
+    text("h1") ||
+    text('[itemprop="name"]') ||
+    document.title?.trim() ||
+    null;
+
   const visiblePrice =
-    text('[itemprop="price"]') || text(".price") || text('[class*="price" i]') || null;
+    text(".a-price .a-offscreen") ||
+    text("#priceblock_ourprice") ||
+    text("#priceblock_dealprice") ||
+    text('[itemprop="price"]') ||
+    text(".price") ||
+    null;
 
   const images = [];
   const pushImg = (u) => {
     const a = abs(u);
-    if (a && !images.includes(a)) images.push(a);
+    if (!a || rejectUrl(a) || images.includes(a)) return;
+    images.push(a);
   };
-  pushImg(ogImage);
+  // Prefer product JSON-LD / OG product media before DOM sweep
   ldImages.forEach((u) => pushImg(u));
-  for (const img of Array.from(document.querySelectorAll("main img, article img, img"))) {
-    if (images.length >= 6) break;
-    const el = img;
-    pushImg(el.currentSrc || el.src || el.getAttribute("data-src"));
+  pushImg(ogImage);
+
+  // Generic product-hero candidates (Amazon landingImage is one optional selector)
+  const landing = document.querySelector(
+    [
+      "#landingImage",
+      "#imgTagWrapperId img",
+      "#main-image",
+      "img[data-old-hires]",
+      ".product__media img",
+      ".product-single__photo img",
+      ".product-gallery__image img",
+      '[data-testid="product-image"] img',
+      "img[itemprop='image']",
+      ".woocommerce-product-gallery__image img",
+    ].join(", "),
+  );
+  if (landing) {
+    pushImg(
+      landing.getAttribute("data-old-hires") ||
+        landing.getAttribute("data-a-dynamic-image") ||
+        landing.currentSrc ||
+        landing.src,
+    );
+    // data-a-dynamic-image is a JSON map of url→size (Amazon and similar)
+    try {
+      const dyn = landing.getAttribute("data-a-dynamic-image");
+      if (dyn) {
+        const map = JSON.parse(dyn);
+        Object.keys(map)
+          .sort((a, b) => {
+            const aa = map[a];
+            const bb = map[b];
+            return (bb?.[0] || 0) * (bb?.[1] || 0) - (aa?.[0] || 0) * (aa?.[1] || 0);
+          })
+          .slice(0, 3)
+          .forEach((u) => pushImg(u));
+      }
+    } catch {
+      // ignore
+    }
   }
 
-  const logoEl = document.querySelector(
-    'img[alt*="logo" i], link[rel="apple-touch-icon"], link[rel="icon"]',
-  );
-  const logo =
-    abs(
-      logoEl && "href" in logoEl
-        ? logoEl.getAttribute("href")
-        : logoEl?.src || null,
-    ) || null;
+  for (const img of Array.from(
+    document.querySelectorAll(
+      [
+        "#altImages img",
+        "#imageBlock img",
+        ".product__media img",
+        ".product-gallery img",
+        "main img",
+        "article img",
+        "[itemtype*='Product'] img",
+      ].join(", "),
+    ),
+  )) {
+    if (images.length >= 8) break;
+    const el = img;
+    const w = Number(el.naturalWidth || el.width || 0);
+    const h = Number(el.naturalHeight || el.height || 0);
+    if ((w && w < 120) || (h && h < 120)) continue;
+    pushImg(
+      el.getAttribute("data-old-hires") ||
+        el.currentSrc ||
+        el.src ||
+        el.getAttribute("data-src"),
+    );
+  }
 
-  const textSample = (document.body?.innerText || "").replace(/\\s+/g, " ").slice(0, 1200);
+  // Do NOT harvest favicon / apple-touch-icon as logo for brandMark.
+  const logo = null;
+
+  const textSample = (document.body?.innerText || "").replace(/\\s+/g, " ").slice(0, 1600);
 
   return {
     title: ogTitle || ldTitle || visibleTitle,
     brand,
+    ogSiteName: ogSite,
     description: ogDesc || ldDesc || "",
     price: price || visiblePrice,
     currency,

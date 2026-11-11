@@ -80,18 +80,18 @@
       }
       .caption-text-wrapper {
         position: absolute;
-        bottom: 150px;
+        bottom: 120px;
         left: 0;
         right: 0;
         display: flex;
         justify-content: center;
         pointer-events: none;
-        overflow: hidden;
-        padding: 10px 0;
+        overflow: visible;
+        padding: 10px 48px;
       }
       .caption-line {
         color: white;
-        font-size: 48px;
+        font-size: clamp(28px, 4.2vw, 44px);
         font-weight: 600;
         letter-spacing: -0.02em;
         text-align: center;
@@ -99,6 +99,11 @@
         transform: translateY(100%);
         opacity: 0;
         font-family: "Noto Sans SC", "Inter", sans-serif;
+        max-width: 920px;
+        line-height: 1.3;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
     </style>
   </head>
