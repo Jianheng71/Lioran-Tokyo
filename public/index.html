@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,71 +7,124 @@
     <meta name="description" content="Lioran—Tokyo local promo dialog" />
     <title>Lioran—Tokyo</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <a class="skip-link" href="#composer">Skip to composer</a>
-    <div class="app">
-      <header class="top">
-        <div class="brand" aria-label="Lioran—Tokyo">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span class="brand-name">Lioran—Tokyo</span>
-        </div>
-        <div class="top-meta" id="health-chip" title="Service health">Checking</div>
-      </header>
 
-      <main class="stage" id="stage">
-        <section class="empty" id="empty" aria-labelledby="empty-title">
-          <h1 id="empty-title" class="empty-title">
-            A 15 second vertical promo<br />from one conversation
-          </h1>
-          <p class="empty-sub">
-            Tell Lioran—Tokyo what you need, including a product page if you have one. It will ask
-            about anything unclear, and will start the video only after it confirms it understands.
-          </p>
-        </section>
-
-        <section class="thread" id="thread" hidden aria-live="polite"></section>
-
-        <section class="player" id="player" hidden>
-          <video id="video" controls playsinline></video>
-          <div class="player-actions">
-            <a class="btn btn-secondary" id="download" href="#" download>Download MP4</a>
-            <span class="mono" id="job-label"></span>
-          </div>
-        </section>
-      </main>
-
-      <footer class="dock">
-        <div class="confirm-bar" id="confirm-bar" hidden>
-          <p class="confirm-text" id="confirm-text"></p>
-          <button type="button" class="btn btn-primary" id="confirm-btn">Confirm and start</button>
-        </div>
-        <form class="composer" id="form">
-          <label class="sr-only" for="composer">Message</label>
-          <textarea
-            id="composer"
-            name="message"
-            rows="2"
-            placeholder="Make a promo from this link, and keep the price in yen."
-            autocomplete="off"
-          ></textarea>
-          <button type="submit" class="btn btn-primary send" id="send" aria-label="Send">
-            Send
+    <div class="shell" id="shell">
+      <aside class="sidebar" id="sidebar" aria-label="Sessions">
+        <div class="sidebar-inner">
+          <button type="button" class="sidebar-new" id="new-chat" title="New chat">
+            <span class="sidebar-brand">Lioran—Tokyo</span>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.06-9.06.92.92L5.92 19.58zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+              />
+            </svg>
           </button>
-        </form>
-        <p class="foot-note">
-          For pages you have the right to use.
+          <p class="sidebar-label">Your chats</p>
+          <nav class="sidebar-list" id="session-list" aria-label="Chat history"></nav>
+        </div>
+        <footer class="sidebar-foot">
           <a href="/license.txt">License</a>
-        </p>
-      </footer>
+          <span class="sidebar-health" id="health-chip" title="Service health">Checking</span>
+        </footer>
+      </aside>
+
+      <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+
+      <section class="main" aria-label="Conversation">
+        <header class="topbar">
+          <button
+            type="button"
+            class="icon-btn mobile-only"
+            id="sidebar-toggle"
+            aria-label="Open sidebar"
+            aria-controls="sidebar"
+            aria-expanded="false"
+          >
+            <svg class="icon" viewBox="0 0 15 15" aria-hidden="true">
+              <path
+                fill="currentColor"
+                fill-rule="evenodd"
+                d="M1.5 3a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1h-12zM1 7.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="icon-btn desktop-only"
+            id="sidebar-collapse"
+            aria-label="Collapse sidebar"
+            aria-controls="sidebar"
+            aria-expanded="true"
+          >
+            <svg class="icon" viewBox="0 0 15 15" aria-hidden="true">
+              <path
+                fill="currentColor"
+                fill-rule="evenodd"
+                d="M1.5 3a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1h-12zM1 7.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <div class="topbar-title" aria-label="Lioran—Tokyo">Lioran—Tokyo</div>
+          <span class="topbar-spacer" aria-hidden="true"></span>
+        </header>
+
+        <div class="chat-column">
+          <div class="messages" id="scroller" role="log" aria-live="polite" aria-relevant="additions">
+            <div class="empty" id="empty">
+              <h1 class="empty-title">Lioran—Tokyo</h1>
+              <p class="empty-sub">
+                Describe the promo you need, including a product page if you have one. Questions come
+                first; the video starts only after you confirm.
+              </p>
+            </div>
+            <div class="message-list" id="thread" hidden></div>
+            <div id="anchor" aria-hidden="true"></div>
+          </div>
+
+          <div class="dock">
+            <div class="confirm-card" id="confirm-bar" hidden>
+              <p class="confirm-text" id="confirm-text"></p>
+              <button type="button" class="btn btn-primary" id="confirm-btn">Confirm and start</button>
+            </div>
+
+            <form class="composer-card" id="form">
+              <label class="sr-only" for="composer">Message</label>
+              <textarea
+                id="composer"
+                name="message"
+                rows="1"
+                placeholder="用这个链接做一条促销片，价格保留日元。"
+                autocomplete="off"
+              ></textarea>
+              <div class="composer-actions">
+                <span class="composer-hint">Enter to send · Shift+Enter for a new line</span>
+                <button type="submit" class="icon-btn send" id="send" aria-label="Send" disabled>
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M3 12h18M13 6l6 6-6 6"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+            <p class="foot-note">For pages you have the right to use.</p>
+          </div>
+        </div>
+      </section>
     </div>
+
     <script type="module" src="/app.js"></script>
   </body>
 </html>

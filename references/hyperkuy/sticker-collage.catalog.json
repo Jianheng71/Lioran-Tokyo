@@ -1,0 +1,27 @@
+{
+  "id": "sticker-collage",
+  "name": "Sticker Collage",
+  "author": "opus",
+  "origin": "owner video",
+  "type": "reference",
+  "tier": "liked",
+  "axes": {
+    "background": "pastel",
+    "type": "grotesque",
+    "depth": "2D",
+    "visual": "app-ui"
+  },
+  "series": [
+    "ai-in-numbers"
+  ],
+  "metaphor": "Pastel design board mixing a selection-boxed headline with 3D icon stickers and price cards.",
+  "signature": "Headline gets a selection box, 3D icons float in as accents, numbered steps appear in serif.",
+  "cover": "covers/sticker-collage.jpg",
+  "aliases": [
+    "kanvas-campur"
+  ],
+  "frame": "covers/sticker-collage.jpg",
+  "references": [
+    "konten-claude-hf"
+  ]
+}

@@ -10,3 +10,5 @@ templates/product-promo/.hyperframes/
 uploads/
 dist/
 .DS_Store
+*.mp4
+

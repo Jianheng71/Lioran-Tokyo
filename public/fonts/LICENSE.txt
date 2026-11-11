@@ -1,0 +1,2 @@
+Inter and Noto Sans SC are licensed under the SIL Open Font License, Version 1.1.
+They are bundled here so the locked template can typeset Latin and CJK without a network fetch at render time.
