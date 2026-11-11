@@ -112,7 +112,6 @@ export function handleChatConfirm(sessionId: string): {
     });
   }
   const job = startFromDraft(session);
-  const templateId = session.chat.draft.templateId || DEFAULT_TEMPLATE_ID;
   session.chat.messages.push({
     role: "user",
     content: "Confirm",
@@ -120,7 +119,7 @@ export function handleChatConfirm(sessionId: string): {
   });
   session.chat.messages.push({
     role: "assistant",
-    content: `Understood. Starting with the ${templateId} template now.`,
+    content: "Understood. Starting the official product-promo template now.",
     at: new Date().toISOString(),
   });
   session.chat.phase = "running";
@@ -130,6 +129,6 @@ export function handleChatConfirm(sessionId: string): {
     sessionId: session.sessionId,
     jobId: job.jobId,
     status: "queued",
-    reply: `Understood. Starting with the ${templateId} template now.`,
+    reply: "Understood. Starting the official product-promo template now.",
   };
 }
